@@ -1,15 +1,6 @@
 #!/usr/bin/env python3
 """
 Task queue CRUD CLI for the HOPS research orchestration framework.
-
-Usage:
-  tasks.py list [--status STATUS] [--type TYPE]
-  tasks.py next [--type TYPE]
-  tasks.py add --type TYPE --data JSON [--priority N] [--parent-id ID]
-  tasks.py update ID --status STATUS
-  tasks.py set-result ID --result JSON
-  tasks.py add-subtasks PARENT_ID --tasks JSON_ARRAY
-  tasks.py get ID
 """
 
 import argparse
@@ -17,21 +8,18 @@ import json
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any, Literal, TypedDict, get_args
 
 DATA_DIR = Path(__file__).parent / "data"
 TASKS_FILE = DATA_DIR / "tasks.json"
 
-VALID_TYPES = {
-    "github_sync",
-    "web_search",
-    "research_paper",
-    "compile_entry",
-    "user_input",
-}
+TaskType = Literal["github_sync", "web_search", "research_paper", "compile_entry", "user_input"]
+TaskStatus = Literal["pending", "in_progress", "completed", "failed", "blocked"]
 
-VALID_STATUSES = {"pending", "in_progress", "completed", "failed", "blocked"}
+VALID_TYPES: frozenset[str] = frozenset(get_args(TaskType))
+VALID_STATUSES: frozenset[str] = frozenset(get_args(TaskStatus))
 
-DEFAULT_PRIORITIES = {
+DEFAULT_PRIORITIES: dict[TaskType, int] = {
     "user_input": 10,
     "research_paper": 6,
     "github_sync": 5,
@@ -40,25 +28,41 @@ DEFAULT_PRIORITIES = {
 }
 
 
+class Task(TypedDict):
+    id: str
+    type: TaskType
+    status: TaskStatus
+    priority: int
+    parent_id: str | None
+    created_at: str
+    updated_at: str
+    data: dict[str, Any]
+    result: dict[str, Any] | None
+
+
+class TaskStore(TypedDict):
+    tasks: list[Task]
+
+
 def now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def load_tasks() -> dict:
+def load_tasks() -> TaskStore:
     if not TASKS_FILE.exists():
         return {"tasks": []}
     with open(TASKS_FILE) as f:
         return json.load(f)
 
 
-def save_tasks(data: dict) -> None:
+def save_tasks(data: TaskStore) -> None:
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     with open(TASKS_FILE, "w") as f:
         json.dump(data, f, indent=2)
         f.write("\n")
 
 
-def next_id(tasks: list) -> str:
+def next_id(tasks: list[Task]) -> str:
     if not tasks:
         return "t-001"
     nums = []
@@ -71,13 +75,13 @@ def next_id(tasks: list) -> str:
     return f"t-{max(nums) + 1:03d}"
 
 
-def out(obj) -> None:
+def out(obj: object) -> None:
     print(json.dumps(obj, indent=2))
 
 
 # ── Subcommands ────────────────────────────────────────────────────────────────
 
-def cmd_list(args) -> None:
+def cmd_list(args: argparse.Namespace) -> None:
     data = load_tasks()
     tasks = data["tasks"]
     if args.status:
@@ -87,7 +91,7 @@ def cmd_list(args) -> None:
     out(tasks)
 
 
-def cmd_next(args) -> None:
+def cmd_next(args: argparse.Namespace) -> None:
     data = load_tasks()
     candidates = [t for t in data["tasks"] if t.get("status") == "pending"]
     if args.type:
@@ -99,7 +103,7 @@ def cmd_next(args) -> None:
     out(best)
 
 
-def cmd_add(args) -> None:
+def cmd_add(args: argparse.Namespace) -> None:
     try:
         task_data = json.loads(args.data)
     except json.JSONDecodeError as e:
@@ -115,7 +119,7 @@ def cmd_add(args) -> None:
     priority = args.priority if args.priority is not None else DEFAULT_PRIORITIES.get(args.type, 5)
     ts = now_iso()
 
-    task = {
+    task: Task = {
         "id": tid,
         "type": args.type,
         "status": "pending",
@@ -131,7 +135,7 @@ def cmd_add(args) -> None:
     out({"id": tid})
 
 
-def cmd_update(args) -> None:
+def cmd_update(args: argparse.Namespace) -> None:
     if args.status not in VALID_STATUSES:
         print(f"Error: unknown status '{args.status}'. Valid: {sorted(VALID_STATUSES)}", file=sys.stderr)
         sys.exit(1)
@@ -149,7 +153,7 @@ def cmd_update(args) -> None:
     sys.exit(1)
 
 
-def cmd_set_result(args) -> None:
+def cmd_set_result(args: argparse.Namespace) -> None:
     try:
         result = json.loads(args.result)
     except json.JSONDecodeError as e:
@@ -169,7 +173,7 @@ def cmd_set_result(args) -> None:
     sys.exit(1)
 
 
-def cmd_add_subtasks(args) -> None:
+def cmd_add_subtasks(args: argparse.Namespace) -> None:
     try:
         subtasks_raw = json.loads(args.tasks)
     except json.JSONDecodeError as e:
@@ -191,7 +195,7 @@ def cmd_add_subtasks(args) -> None:
             sys.exit(1)
         tid = next_id(data["tasks"])
         priority = st.get("priority", DEFAULT_PRIORITIES.get(task_type, 5))
-        task = {
+        task: Task = {
             "id": tid,
             "type": task_type,
             "status": "pending",
@@ -209,7 +213,7 @@ def cmd_add_subtasks(args) -> None:
     out({"ids": ids})
 
 
-def cmd_get(args) -> None:
+def cmd_get(args: argparse.Namespace) -> None:
     data = load_tasks()
     for task in data["tasks"]:
         if task["id"] == args.id:
@@ -222,7 +226,7 @@ def cmd_get(args) -> None:
 # ── Main ───────────────────────────────────────────────────────────────────────
 
 def main():
-    parser = argparse.ArgumentParser(description="HOPS task queue CLI")
+    parser = argparse.ArgumentParser(description="Task queue CRUD CLI for the HOPS research orchestration framework")
     sub = parser.add_subparsers(dest="command", required=True)
 
     # list
@@ -231,7 +235,7 @@ def main():
     p_list.add_argument("--type", help="Filter by type")
 
     # next
-    p_next = sub.add_parser("next", help="Get next pending task (highest priority)")
+    p_next = sub.add_parser("next", help="Get next pending task of the highest priority")
     p_next.add_argument("--type", help="Filter by type")
 
     # add
