@@ -1,0 +1,611 @@
+{
+  "tasks": [
+    {
+      "id": "t-001",
+      "type": "github_sync",
+      "title": "Sync: vaclavblazej/parameters-code",
+      "status": "failed",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T09:00:00Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:07:19Z",
+      "data": {
+        "repo": "vaclavblazej/parameters-code"
+      },
+      "result": {
+        "status": "error",
+        "error": "GITHUB_TOKEN environment variable not set. Please export a valid GitHub personal access token."
+      },
+      "successor_ids": []
+    },
+    {
+      "id": "t-002",
+      "type": "github_sync",
+      "title": "Sync: vaclavblazej/parameters-code",
+      "status": "completed",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:21Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:14:02Z",
+      "data": {
+        "repo": "vaclavblazej/parameters-code"
+      },
+      "result": {
+        "repo": "vaclavblazej/parameters-code",
+        "issues_added": 12,
+        "issues_skipped": 0,
+        "task_ids": [
+          "t-003",
+          "t-004",
+          "t-005",
+          "t-006",
+          "t-007",
+          "t-008",
+          "t-009",
+          "t-010",
+          "t-011",
+          "t-012",
+          "t-013",
+          "t-014"
+        ],
+        "status": "ok"
+      },
+      "successor_ids": []
+    },
+    {
+      "id": "t-003",
+      "type": "web_search",
+      "title": "Search: [INFO] stable gonality",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] stable gonality",
+        "description": "**Describe the Parameter or Relation**\nStable gonality is missing\n\n**Source**\nLink to a book or published paper that establishes said results.\n[For easy observation give a reason for the change, e.g., a short proof or counterexample.](https://arxiv.org/pdf/2202.06838)",
+        "github_issue_number": 17,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/17",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-004",
+      "type": "web_search",
+      "title": "Search: [INFO] degree treewidth -> carving-width",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] degree treewidth -> carving-width",
+        "description": "(relation received by e-mail)\n\n**Describe the Parameter or Relation**\ncarving-width is upper-bounded by the product of treewidth and max degree\n\nIn [1], this bound is attributed to [2].\n\n**Source**\n [1] D. Marx, A. Sidiropoulos.\nThe limited blessing of low dimensionality: when 1-1/d is the best possible exponent for d-dimensional geometric problems.\nIn SoCG 2014, pages 67-76. https://doi.org/10.1145/2582112.2582124\n\n[2] D. M. Thilikos, M. J. Serna, and H. L. Bodlaender.\nConstructive linear time ",
+        "github_issue_number": 16,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/16",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-005",
+      "type": "web_search",
+      "title": "Search: [INFO] star-width",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] star-width",
+        "description": "vertex integrity is also sometimes known as star-width, i.e. I want a tree decomposition of the graph where the tree is a star. \n\ndefinition: https://www.sciencedirect.com/science/article/pii/S0020019017300704\nbut no relation to vi there..., \nthe proof of equivalence is roughly as follows:\nsw -> vi\nthe root of the decomposition is the separator to the vertex integrity\nvi -> sw\nthe separator forms the root of the decomposition, everything else is maybe connected to it -> star-decomoposition",
+        "github_issue_number": 14,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/14",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-006",
+      "type": "web_search",
+      "title": "Search: [INFO] Add treebandwidth",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] Add treebandwidth",
+        "description": "**Describe the Parameter or Relation**\ntreebandwidth\n\n**Source**\ndefined in https://arxiv.org/pdf/2502.11674v1\n",
+        "github_issue_number": 13,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/13",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-007",
+      "type": "web_search",
+      "title": "Search: [FEATURE] Graph search strategies",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[FEATURE] Graph search strategies",
+        "description": "**Is your feature request related to a problem? Please describe.**\nMany parameters can be described through cops & robber (search) games. These games specify how cops move, how robber moves, and rules of the game (how turn progresses), how the parameter is defined through the game.\n\n**Describe the solution you'd like**\nAdd definitions of the parameters through the games.\n\n**Additional context**\nSome games are mentioned in https://arxiv.org/pdf/2502.11674v1\n",
+        "github_issue_number": 12,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/12",
+        "github_labels": [
+          "enhancement"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-008",
+      "type": "web_search",
+      "title": "Search: [FEATURE] Parametric obstructions",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[FEATURE] Parametric obstructions",
+        "description": "**Is your feature request related to a problem? Please describe.**\nMany parameters can be equivalently described through excluding a structure as a minor, or subgraph, or induced minor, or induced subgraph, etc.\n\n**Describe the solution you'd like**\nCreate parameters through excluding parametric graph classes via containment relations. Add relation inference of the derived parameters through relation of the graph classes and containment relation.\n\n**Additional context**\nSome parameter definition",
+        "github_issue_number": 11,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/11",
+        "github_labels": [
+          "enhancement"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-009",
+      "type": "web_search",
+      "title": "Search: [INFO] Add dipole number",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] Add dipole number",
+        "description": "**Describe the Parameter or Relation**\ndipole number\n\n**Source**\nunsure\n\n**Additional context**\nmentioned in https://arxiv.org/pdf/2502.11674v1 seems to be based on excluding $K_{2,l}$\n",
+        "github_issue_number": 10,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/10",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-010",
+      "type": "web_search",
+      "title": "Search: [INFO] Add Fan number",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] Add Fan number",
+        "description": "**Describe the Parameter or Relation**\nfan number\n\n**Source**\nunsure\n\n**Additional context**\nmentioned in https://arxiv.org/pdf/2502.11674v1 seems to be based on excluding a fan\n",
+        "github_issue_number": 9,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/9",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-011",
+      "type": "web_search",
+      "title": "Search: [INFO] Add tree-partition-width",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] Add tree-partition-width",
+        "description": "**Describe the Parameter or Relation**\ntree-partition-width\n\n**Source**\nhttps://www.sciencedirect.com/science/article/pii/S0195669808002837\n",
+        "github_issue_number": 8,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/8",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-012",
+      "type": "web_search",
+      "title": "Search: [INFO] Add Edge-treewidth",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] Add Edge-treewidth",
+        "description": "**Describe the Parameter or Relation**\nEdge-treewidth\n\n**Source**\nhttps://www.sciencedirect.com/science/article/pii/S0166218X23002962\n",
+        "github_issue_number": 7,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/7",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-013",
+      "type": "web_search",
+      "title": "Search: [INFO] Add (slim) tree-cut width",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:13:45Z",
+      "data": {
+        "topic": "[INFO] Add (slim) tree-cut width",
+        "description": "**Describe the Parameter or Relation**\n(slim) tree-cut width\n\n**Source**\nhttps://drops.dagstuhl.de/storage/00lipics/lipics-vol249-ipec2022/LIPIcs.IPEC.2022.15/LIPIcs.IPEC.2022.15.pdf\n",
+        "github_issue_number": 6,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/6",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-014",
+      "type": "web_search",
+      "title": "Search: bandwidth + (treewidth - pathwidth) = treebandwidth",
+      "status": "completed",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:13:45Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:32:21Z",
+      "data": {
+        "topic": "bandwidth + (treewidth - pathwidth) = treebandwidth",
+        "description": "I wanted to point you to this paper here:\nhttps://arxiv.org/pdf/2502.11674v1\nThere's multiple things in there that could be interesting:\n- They have a parameter relationship diagram in Figure 8 on page 36, where they relate multiple parameters which seem to be missing from HOPS (domino treewidth, (slim) tree-cut width, edge-treewidth, tree-partition-width, fan number, dipole number,...).\n- They give a list of parametric obstructions for a lot of parameters in Table 1 of page 38, maybe such overv",
+        "github_issue_number": 1,
+        "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/1",
+        "github_labels": [
+          "hierarchy"
+        ],
+        "max_papers": 5
+      },
+      "result": {
+        "topic": "bandwidth + (treewidth - pathwidth) = treebandwidth",
+        "papers_found": [
+          {
+            "title": "On a tree-based variant of bandwidth and forbidding simple topological minors",
+            "doi": "10.48550/arXiv.2502.11674",
+            "url": "https://arxiv.org/abs/2502.11674",
+            "paper_id": "10_48550_arXiv_2502_11674",
+            "reason": "Introduces and thoroughly studies treebandwidth as a graph parameter that extends bandwidth by replacing linear layouts with rooted trees; contains the parameter relationship diagram (Figure 8) and parametric obstruction table (Table 1) referenced in the task."
+          },
+          {
+            "title": "On the parameterized complexity of computing tree-partitions",
+            "doi": "10.48550/arXiv.2206.11832",
+            "url": "https://arxiv.org/abs/2206.11832",
+            "paper_id": "10_48550_arXiv_2206_11832",
+            "reason": "Studies tree-partition-width and proves XALP-completeness for both tree-partition-width and domino treewidth."
+          },
+          {
+            "title": "On the Complexity of Problems on Tree-structured Graphs",
+            "doi": "10.48550/arXiv.2206.11828",
+            "url": "https://arxiv.org/abs/2206.11828",
+            "paper_id": "10_48550_arXiv_2206_11828",
+            "reason": "Introduces the XALP complexity class and proves XALP-hardness for problems on tree-structured graphs."
+          },
+          {
+            "title": "Slim Tree-Cut Width",
+            "doi": "10.48550/arXiv.2206.15091",
+            "url": "https://arxiv.org/abs/2206.15091",
+            "paper_id": "10_48550_arXiv_2206_15091",
+            "reason": "Defines slim tree-cut width, a parameter explicitly listed in the treebandwidth hierarchy."
+          },
+          {
+            "title": "Algorithmic Applications of Tree-Cut Width",
+            "doi": "10.48550/arXiv.2206.00752",
+            "url": "https://arxiv.org/abs/2206.00752",
+            "paper_id": "10_48550_arXiv_2206_00752",
+            "reason": "Provides algorithmic applications of tree-cut width, a parameter in the same hierarchy as treebandwidth."
+          }
+        ],
+        "already_researched": []
+      },
+      "successor_ids": [
+        "t-015",
+        "t-016",
+        "t-017",
+        "t-018",
+        "t-019"
+      ]
+    },
+    {
+      "id": "t-015",
+      "type": "research_paper",
+      "title": "Research: On a tree-based variant of bandwidth and forbidding simple topological minors",
+      "status": "pending",
+      "priority": 6,
+      "parent_id": "t-014",
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:32:10Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:32:10Z",
+      "data": {
+        "paper_id": "10_48550_arXiv_2502_11674",
+        "title": "On a tree-based variant of bandwidth and forbidding simple topological minors",
+        "doi": "10.48550/arXiv.2502.11674",
+        "url": "https://arxiv.org/abs/2502.11674",
+        "reason": "Introduces and thoroughly studies treebandwidth as a graph parameter that extends bandwidth by replacing linear layouts with rooted trees; contains the parameter relationship diagram (Figure 8) and parametric obstruction table (Table 1) referenced in the task, covering domino treewidth, slim tree-cut width, edge-treewidth, tree-partition-width, fan number, and dipole number."
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-016",
+      "type": "research_paper",
+      "title": "Research: On the parameterized complexity of computing tree-partitions",
+      "status": "pending",
+      "priority": 6,
+      "parent_id": "t-014",
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:32:10Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:32:10Z",
+      "data": {
+        "paper_id": "10_48550_arXiv_2206_11832",
+        "title": "On the parameterized complexity of computing tree-partitions",
+        "doi": "10.48550/arXiv.2206.11832",
+        "url": "https://arxiv.org/abs/2206.11832",
+        "reason": "Studies tree-partition-width and proves XALP-completeness for both tree-partition-width and domino treewidth, parameters that appear in the treebandwidth parameter hierarchy diagram."
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-017",
+      "type": "research_paper",
+      "title": "Research: On the Complexity of Problems on Tree-structured Graphs",
+      "status": "pending",
+      "priority": 6,
+      "parent_id": "t-014",
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:32:10Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:32:10Z",
+      "data": {
+        "paper_id": "10_48550_arXiv_2206_11828",
+        "title": "On the Complexity of Problems on Tree-structured Graphs",
+        "doi": "10.48550/arXiv.2206.11828",
+        "url": "https://arxiv.org/abs/2206.11828",
+        "reason": "Introduces the XALP complexity class and proves XALP-hardness for problems on tree-structured graphs parameterized by treewidth, which is directly invoked in the treebandwidth paper to classify treebandwidth as XALP-complete."
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-018",
+      "type": "research_paper",
+      "title": "Research: Slim Tree-Cut Width",
+      "status": "pending",
+      "priority": 6,
+      "parent_id": "t-014",
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:32:10Z",
+      "started_at": null,
+      "updated_at": "2026-02-26T13:32:10Z",
+      "data": {
+        "paper_id": "10_48550_arXiv_2206_15091",
+        "title": "Slim Tree-Cut Width",
+        "doi": "10.48550/arXiv.2206.15091",
+        "url": "https://arxiv.org/abs/2206.15091",
+        "reason": "Defines slim tree-cut width, a parameter that is explicitly listed in the treebandwidth parameter hierarchy (Figure 8 of 2502.11674) and provides structural, algorithmic, and forbidden-immersion characterizations placing it in the broader parameter landscape."
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-019",
+      "type": "research_paper",
+      "title": "Research: Algorithmic Applications of Tree-Cut Width",
+      "status": "failed",
+      "priority": 6,
+      "parent_id": "t-014",
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-26T13:32:10Z",
+      "started_at": null,
+      "updated_at": "2026-02-27T12:57:41Z",
+      "data": {
+        "paper_id": "10_48550_arXiv_2206_00752",
+        "title": "Algorithmic Applications of Tree-Cut Width",
+        "doi": "10.48550/arXiv.2206.00752",
+        "url": "https://arxiv.org/abs/2206.00752",
+        "reason": "Provides the first algorithmic applications of tree-cut width, a parameter that sits in the same hierarchy as treebandwidth; establishes FPT results and W[1]-hardness results for problems parameterized by tree-cut width, informing the algorithmic landscape around treebandwidth."
+      },
+      "result": {
+        "error": "claude exit code -9"
+      },
+      "successor_ids": []
+    },
+    {
+      "id": "t-020",
+      "type": "web_search",
+      "title": "Search: test",
+      "status": "completed",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-27T13:30:20Z",
+      "started_at": null,
+      "updated_at": "2026-02-27T13:30:44Z",
+      "data": {
+        "topic": "test",
+        "description": "d",
+        "github_issue_number": 99,
+        "github_issue_url": "",
+        "github_labels": [],
+        "max_papers": 3
+      },
+      "result": {
+        "ok": true
+      },
+      "successor_ids": []
+    },
+    {
+      "id": "t-021",
+      "type": "github_sync",
+      "title": "Sync: foo/bar",
+      "status": "pending",
+      "priority": 5,
+      "parent_id": null,
+      "blocked_by": [
+        "t-001"
+      ],
+      "attempt": 1,
+      "max_attempts": 2,
+      "created_at": "2026-02-27T13:30:33Z",
+      "started_at": null,
+      "updated_at": "2026-02-27T13:30:33Z",
+      "data": {
+        "repo": "foo/bar"
+      },
+      "result": null,
+      "successor_ids": []
+    },
+    {
+      "id": "t-022",
+      "type": "research_paper",
+      "title": "Research: X",
+      "status": "in_progress",
+      "priority": 6,
+      "parent_id": null,
+      "blocked_by": [],
+      "attempt": 2,
+      "max_attempts": 2,
+      "created_at": "2026-02-27T13:30:50Z",
+      "started_at": "2026-02-27T13:31:10Z",
+      "updated_at": "2026-02-27T13:31:10Z",
+      "data": {
+        "paper_id": "x",
+        "title": "X",
+        "doi": "",
+        "url": "",
+        "reason": ""
+      },
+      "result": {
+        "error": "crash2"
+      },
+      "successor_ids": []
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "id": "test-github_sync",
+  "type": "github_sync",
+  "data": {
+    "repo": "vaclavblazej/parameters-code"
+  }
+}

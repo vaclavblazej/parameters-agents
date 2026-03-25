@@ -1,0 +1,12 @@
+{
+  "id": "test-web_search",
+  "type": "web_search",
+  "data": {
+    "topic": "treewidth parameterized complexity",
+    "description": "Papers formally defining treewidth or proving upper/lower bounds between treewidth and other graph parameters",
+    "github_issue_number": 0,
+    "github_issue_url": "https://github.com/vaclavblazej/parameters-code/issues/0",
+    "github_labels": ["parameter"],
+    "max_papers": 2
+  }
+}

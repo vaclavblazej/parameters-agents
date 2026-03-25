@@ -1,0 +1,8 @@
+{
+  "id": "test-user_input",
+  "type": "user_input",
+  "data": {
+    "question": "Should we prioritize researching papers on pathwidth or bandwidth next?",
+    "context": "The current pipeline has treewidth and treedepth well covered. Pathwidth and bandwidth are closely related parameters with fewer entries in the collection."
+  }
+}

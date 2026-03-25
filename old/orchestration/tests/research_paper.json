@@ -1,0 +1,11 @@
+{
+  "id": "test-research_paper",
+  "type": "research_paper",
+  "data": {
+    "paper_id": "2004_14730",
+    "title": "Twin-width I: tractable FO model checking",
+    "doi": "10.1145/3486655",
+    "url": "https://arxiv.org/abs/2004.14730",
+    "reason": "Introduces twin-width, a new graph parameter with FPT results for first-order model checking"
+  }
+}

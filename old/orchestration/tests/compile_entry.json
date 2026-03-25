@@ -1,0 +1,48 @@
+{
+  "task": {
+    "id": "test-compile_entry",
+    "type": "compile_entry",
+    "data": {
+      "paper_id": "2004_14730",
+      "target": "parameter",
+      "parameter_name": "twin-width"
+    }
+  },
+  "paper": {
+    "paper_id": "2004_14730",
+    "doi": "10.1145/3486655",
+    "title": "Twin-width I: tractable FO model checking",
+    "authors": ["Édouard Bonnet", "Eun Jung Kim", "Stéphan Thomassé", "Rémi Watrigant"],
+    "year": 2022,
+    "venue": "Journal of the ACM",
+    "url": "https://arxiv.org/abs/2004.14730",
+    "pdf_accessible": true,
+    "abstract": "Inspired by a width parameter called twin-width and introduced for tournament and dense graphs, we study its extension to general graphs. We show that FO model checking, which is hard for general graphs, is FPT for graphs of bounded twin-width.",
+    "parameters_defined": [
+      {
+        "name": "twin-width",
+        "definition_sentence": "The twin-width of a graph $G$, denoted $\\mathrm{tww}(G)$, is the minimum $d$ such that $G$ admits a $d$-sequence.",
+        "page": 3,
+        "quote_verbatim": "The twin-width of a graph G, denoted tww(G), is the minimum d such that G admits a d-sequence.",
+        "suggested_id": "ab1234",
+        "score": 8
+      }
+    ],
+    "relations_found": [
+      {
+        "from": "twin-width",
+        "to": "treewidth",
+        "direction": "upper_bound",
+        "bound_type": "Exponential",
+        "theorem": "Theorem 1.2",
+        "page": 5,
+        "quote_verbatim": "Every graph of treewidth k has twin-width at most 2^k - 1."
+      }
+    ],
+    "bibtex": "@Article{Bonnet2022,\n    author  = {Bonnet, {\\'{E}}douard and Kim, Eun Jung and Thomass{\\'{e}}, St{\\'{e}}phan and Watrigant, R{\\'{e}}mi},\n    title   = {Twin-Width {I}: Tractable {FO} Model Checking},\n    journal = {Journal of the {ACM}},\n    year    = {2022},\n    volume  = {69},\n    pages   = {1--46},\n    doi     = {10.1145/3486655},\n    url     = {https://arxiv.org/abs/2004.14730},\n}",
+    "bibtex_key": "Bonnet2022",
+    "suggested_source_id": "xy5678",
+    "access_notes": "Open access via arXiv",
+    "todo_flags": []
+  }
+}
