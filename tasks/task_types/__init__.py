@@ -7,9 +7,11 @@ Registry of task types. Each module exposes:
 """
 
 from types import ModuleType
-from typing import Any
+from typing import Any, Literal
 
 from . import compile_entry, github_sync, research_paper, user_input, web_search
+
+TaskType = Literal["github_sync", "web_search", "research_paper", "compile_entry", "user_input"]
 
 # Map type name → module
 REGISTRY: dict[str, ModuleType] = {

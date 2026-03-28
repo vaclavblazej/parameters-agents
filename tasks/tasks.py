@@ -9,12 +9,8 @@ from typing import Any, Literal, TypedDict, cast, get_args
 
 from .task_types import (
     REGISTRY,
-    CompileEntryData,
-    GithubSyncData,
-    ResearchPaperData,
     TaskData,
-    UserInputData,
-    WebSearchData,
+    TaskType,
     default_max_attempts,
     default_priority,
     derive_title,
@@ -23,7 +19,6 @@ from .task_types import (
 DATA_DIR = Path(__file__).parent / "data"
 TASKS_FILE = DATA_DIR / "tasks.json"
 
-TaskType = Literal["github_sync", "web_search", "research_paper", "compile_entry", "user_input"]
 TaskStatus = Literal["pending", "in_progress", "completed", "failed", "blocked"]
 
 VALID_TYPES: frozenset[str] = frozenset(REGISTRY.keys())
