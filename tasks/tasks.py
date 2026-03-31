@@ -26,14 +26,14 @@ VALID_STATUSES: frozenset[str] = frozenset(get_args(TaskStatus))
 
 
 class Task(TypedDict):
-    id: str
+    id: int
     type: TaskType
     title: str
     status: TaskStatus
     priority: int
-    parent_id: str | None
-    successor_ids: list[str]
-    blocked_by: list[str]
+    parent_id: int | None
+    successor_ids: list[int]
+    blocked_by: list[int]
     attempt: int
     max_attempts: int
     created_at: str
@@ -65,17 +65,11 @@ def save_tasks(data: TaskStore) -> None:
         f.write("\n")
 
 
-def next_id(tasks: list[Task]) -> str:
+def next_id(tasks: list[Task]) -> int:
     if not tasks:
-        return "t-001"
-    nums = []
-    for t in tasks:
-        tid = t.get("id", "")
-        if tid.startswith("t-") and tid[2:].isdigit():
-            nums.append(int(tid[2:]))
-    if not nums:
-        return "t-001"
-    return f"t-{max(nums) + 1:03d}"
+        return 1
+    nums = [t["id"] for t in tasks if isinstance(t.get("id"), int)]
+    return max(nums) + 1 if nums else 1
 
 
 def is_unblocked(task: Task, completed_ids: set[str]) -> bool:
@@ -94,10 +88,10 @@ def get_next_task(task_type: str | None = None) -> Task | None:
         candidates = [t for t in candidates if t.get("type") == task_type]
     if not candidates:
         return None
-    return max(candidates, key=lambda t: (t.get("priority", 5), t.get("id", "")))
+    return max(candidates, key=lambda t: (t.get("priority", 5), t.get("id", 0)))
 
 
-def get_task(task_id: str) -> Task | None:
+def get_task(task_id: int) -> Task | None:
     data = load_tasks()
     for task in data["tasks"]:
         if task["id"] == task_id:
@@ -109,11 +103,11 @@ def add_task(
     task_type: str,
     task_data: dict[str, Any],
     priority: int | None = None,
-    parent_id: str | None = None,
+    parent_id: int | None = None,
     title: str | None = None,
-    blocked_by: list[str] | None = None,
+    blocked_by: list[int] | None = None,
     max_attempts: int | None = None,
-) -> str:
+) -> int:
     if task_type not in VALID_TYPES:
         raise ValueError(f"Unknown type '{task_type}'. Valid: {sorted(VALID_TYPES)}")
 
@@ -155,7 +149,7 @@ def add_task(
     return tid
 
 
-def update_task_status(task_id: str, status: str) -> None:
+def update_task_status(task_id: int, status: str) -> None:
     if status not in VALID_STATUSES:
         raise ValueError(f"Unknown status '{status}'. Valid: {sorted(VALID_STATUSES)}")
 
@@ -174,7 +168,7 @@ def update_task_status(task_id: str, status: str) -> None:
     raise KeyError(f"Task '{task_id}' not found")
 
 
-def set_task_result(task_id: str, result: dict[str, Any]) -> None:
+def set_task_result(task_id: int, result: dict[str, Any]) -> None:
     data = load_tasks()
     for task in data["tasks"]:
         if task["id"] == task_id:
@@ -185,7 +179,7 @@ def set_task_result(task_id: str, result: dict[str, Any]) -> None:
     raise KeyError(f"Task '{task_id}' not found")
 
 
-def complete_task(task_id: str, result: dict[str, Any], status: str = "completed") -> None:
+def complete_task(task_id: int, result: dict[str, Any], status: str = "completed") -> None:
     if status not in ("completed", "failed"):
         raise ValueError("status must be 'completed' or 'failed'")
     data = load_tasks()
@@ -199,7 +193,7 @@ def complete_task(task_id: str, result: dict[str, Any], status: str = "completed
     raise KeyError(f"Task '{task_id}' not found")
 
 
-def add_subtasks(parent_id: str, subtasks: list[dict[str, Any]]) -> list[str]:
+def add_subtasks(parent_id: int, subtasks: list[dict[str, Any]]) -> list[int]:
     data = load_tasks()
 
     parent_task = None
@@ -249,7 +243,7 @@ def add_subtasks(parent_id: str, subtasks: list[dict[str, Any]]) -> list[str]:
     return ids
 
 
-def retry_task(task_id: str) -> dict[str, Any]:
+def retry_task(task_id: int) -> dict[str, Any]:
     data = load_tasks()
     for task in data["tasks"]:
         if task["id"] == task_id:

@@ -46,12 +46,13 @@ def cmd_add(args: argparse.Namespace) -> None:
         print(f"Error: unknown type '{args.type}'. Valid: {sorted(VALID_TYPES)}", file=sys.stderr)
         sys.exit(1)
 
-    blocked_by = []
+    blocked_by: list[int] = []
     if args.blocked_by:
         try:
-            blocked_by = json.loads(args.blocked_by)
-            if not isinstance(blocked_by, list):
+            raw_blocked = json.loads(args.blocked_by)
+            if not isinstance(raw_blocked, list):
                 raise ValueError("must be array")
+            blocked_by = [int(x) for x in raw_blocked]
         except (json.JSONDecodeError, ValueError) as e:
             print(f"Error: invalid JSON for --blocked-by: {e}", file=sys.stderr)
             sys.exit(1)
@@ -61,7 +62,7 @@ def cmd_add(args: argparse.Namespace) -> None:
             task_type=args.type,
             task_data=task_data,
             priority=args.priority,
-            parent_id=args.parent_id,
+            parent_id=int(args.parent_id) if args.parent_id else None,
             title=args.title,
             blocked_by=blocked_by,
             max_attempts=args.max_attempts,
@@ -79,7 +80,7 @@ def cmd_update(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     try:
-        update_task_status(args.id, args.status)
+        update_task_status(int(args.id), args.status)
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -95,7 +96,7 @@ def cmd_set_result(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     try:
-        set_task_result(args.id, result)
+        set_task_result(int(args.id), result)
     except KeyError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -115,7 +116,7 @@ def cmd_add_subtasks(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     try:
-        ids = add_subtasks(args.parent_id, subtasks_raw)
+        ids = add_subtasks(int(args.parent_id), subtasks_raw)
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -124,7 +125,7 @@ def cmd_add_subtasks(args: argparse.Namespace) -> None:
 
 
 def cmd_get(args: argparse.Namespace) -> None:
-    task = get_task(args.id)
+    task = get_task(int(args.id))
     if task is None:
         print(f"Error: task '{args.id}' not found", file=sys.stderr)
         sys.exit(1)
@@ -140,7 +141,7 @@ def cmd_complete(args: argparse.Namespace) -> None:
 
     status = args.status if args.status else "completed"
     try:
-        complete_task(args.id, result, status)
+        complete_task(int(args.id), result, status)
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -150,7 +151,7 @@ def cmd_complete(args: argparse.Namespace) -> None:
 
 def cmd_retry(args: argparse.Namespace) -> None:
     try:
-        info = retry_task(args.id)
+        info = retry_task(int(args.id))
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

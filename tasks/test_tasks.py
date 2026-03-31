@@ -35,22 +35,22 @@ def isolated_tasks(tmp_path, monkeypatch):
 
 
 def test_next_id_empty():
-    assert next_id([]) == "t-001"
+    assert next_id([]) == 1
 
 
 def test_next_id_sequential(tmp_path):
-    tasks = [{"id": "t-003"}]
-    assert next_id(tasks) == "t-004"
+    tasks = [{"id": 3}]
+    assert next_id(tasks) == 4
 
 
 def test_next_id_gap(tmp_path):
-    tasks = [{"id": "t-001"}, {"id": "t-005"}]
-    assert next_id(tasks) == "t-006"
+    tasks = [{"id": 1}, {"id": 5}]
+    assert next_id(tasks) == 6
 
 
 def test_next_id_ignores_non_standard():
-    tasks = [{"id": "t-001"}, {"id": "custom-99"}]
-    assert next_id(tasks) == "t-002"
+    tasks = [{"id": 1}, {"id": "not-an-int"}]
+    assert next_id(tasks) == 2
 
 
 # ---------------------------------------------------------------------------
@@ -71,12 +71,12 @@ def _web_search_data():
 
 def test_add_task_returns_id():
     tid = add_task("web_search", _web_search_data())
-    assert tid == "t-001"
+    assert tid == 1
 
 
 def test_add_task_persisted():
     add_task("web_search", _web_search_data())
-    task = get_task("t-001")
+    task = get_task(1)
     assert task is not None
     assert task["type"] == "web_search"
     assert task["status"] == "pending"
@@ -84,13 +84,13 @@ def test_add_task_persisted():
 
 def test_add_task_default_title():
     add_task("web_search", _web_search_data())
-    task = get_task("t-001")
+    task = get_task(1)
     assert task["title"] == "Search: treewidth"
 
 
 def test_add_task_custom_title():
     add_task("web_search", _web_search_data(), title="My custom title")
-    assert get_task("t-001")["title"] == "My custom title"
+    assert get_task(1)["title"] == "My custom title"
 
 
 def test_add_task_invalid_type():
@@ -101,12 +101,12 @@ def test_add_task_invalid_type():
 def test_add_task_increments_id():
     t1 = add_task("web_search", _web_search_data())
     t2 = add_task("web_search", _web_search_data())
-    assert t1 == "t-001"
-    assert t2 == "t-002"
+    assert t1 == 1
+    assert t2 == 2
 
 
 def test_get_task_missing_returns_none():
-    assert get_task("t-999") is None
+    assert get_task(999) is None
 
 
 def test_list_tasks_empty():
@@ -115,7 +115,7 @@ def test_list_tasks_empty():
 
 def test_list_tasks_filter_status():
     add_task("web_search", _web_search_data())
-    update_task_status("t-001", "in_progress")
+    update_task_status(1, "in_progress")
     add_task("web_search", _web_search_data())
 
     pending = list_tasks(status="pending")
@@ -137,26 +137,26 @@ def test_list_tasks_filter_type():
 
 def test_update_status():
     add_task("web_search", _web_search_data())
-    update_task_status("t-001", "in_progress")
-    assert get_task("t-001")["status"] == "in_progress"
+    update_task_status(1, "in_progress")
+    assert get_task(1)["status"] == "in_progress"
 
 
 def test_update_status_sets_started_at():
     add_task("web_search", _web_search_data())
-    assert get_task("t-001")["started_at"] is None
-    update_task_status("t-001", "in_progress")
-    assert get_task("t-001")["started_at"] is not None
+    assert get_task(1)["started_at"] is None
+    update_task_status(1, "in_progress")
+    assert get_task(1)["started_at"] is not None
 
 
 def test_update_status_invalid():
     add_task("web_search", _web_search_data())
     with pytest.raises(ValueError, match="Unknown status"):
-        update_task_status("t-001", "flying")
+        update_task_status(1, "flying")
 
 
 def test_update_status_missing_task():
     with pytest.raises(KeyError):
-        update_task_status("t-999", "pending")
+        update_task_status(999, "pending")
 
 
 # ---------------------------------------------------------------------------
@@ -166,13 +166,13 @@ def test_update_status_missing_task():
 
 def test_set_task_result():
     add_task("web_search", _web_search_data())
-    set_task_result("t-001", {"papers": ["p1"]})
-    assert get_task("t-001")["result"] == {"papers": ["p1"]}
+    set_task_result(1, {"papers": ["p1"]})
+    assert get_task(1)["result"] == {"papers": ["p1"]}
 
 
 def test_set_task_result_missing_task():
     with pytest.raises(KeyError):
-        set_task_result("t-999", {})
+        set_task_result(999, {})
 
 
 # ---------------------------------------------------------------------------
@@ -182,27 +182,27 @@ def test_set_task_result_missing_task():
 
 def test_complete_task():
     add_task("web_search", _web_search_data())
-    complete_task("t-001", {"done": True})
-    task = get_task("t-001")
+    complete_task(1, {"done": True})
+    task = get_task(1)
     assert task["status"] == "completed"
     assert task["result"] == {"done": True}
 
 
 def test_complete_task_as_failed():
     add_task("web_search", _web_search_data())
-    complete_task("t-001", {"error": "timeout"}, status="failed")
-    assert get_task("t-001")["status"] == "failed"
+    complete_task(1, {"error": "timeout"}, status="failed")
+    assert get_task(1)["status"] == "failed"
 
 
 def test_complete_task_invalid_status():
     add_task("web_search", _web_search_data())
     with pytest.raises(ValueError):
-        complete_task("t-001", {}, status="pending")
+        complete_task(1, {}, status="pending")
 
 
 def test_complete_task_missing_task():
     with pytest.raises(KeyError):
-        complete_task("t-999", {})
+        complete_task(999, {})
 
 
 # ---------------------------------------------------------------------------
@@ -218,34 +218,34 @@ def test_get_next_task_returns_pending():
     add_task("web_search", _web_search_data())
     task = get_next_task()
     assert task is not None
-    assert task["id"] == "t-001"
+    assert task["id"] == 1
 
 
 def test_get_next_task_prefers_higher_priority():
     add_task("web_search", _web_search_data(), priority=3)
     add_task("web_search", _web_search_data(), priority=8)
-    assert get_next_task()["id"] == "t-002"
+    assert get_next_task()["id"] == 2
 
 
 def test_get_next_task_skips_in_progress():
     add_task("web_search", _web_search_data())
-    update_task_status("t-001", "in_progress")
+    update_task_status(1, "in_progress")
     assert get_next_task() is None
 
 
 def test_get_next_task_skips_blocked():
     add_task("web_search", _web_search_data())
-    add_task("web_search", _web_search_data(), blocked_by=["t-001"])
-    # only t-001 is eligible
-    assert get_next_task()["id"] == "t-001"
+    add_task("web_search", _web_search_data(), blocked_by=[1])
+    # only task 1 is eligible
+    assert get_next_task()["id"] == 1
 
 
 def test_get_next_task_unblocked_after_completion():
     add_task("web_search", _web_search_data())
-    add_task("web_search", _web_search_data(), blocked_by=["t-001"])
-    complete_task("t-001", {})
-    # now t-002 is unblocked; t-001 is completed so not pending
-    assert get_next_task()["id"] == "t-002"
+    add_task("web_search", _web_search_data(), blocked_by=[1])
+    complete_task(1, {})
+    # now task 2 is unblocked; task 1 is completed so not pending
+    assert get_next_task()["id"] == 2
 
 
 def test_get_next_task_filter_by_type():
@@ -262,22 +262,22 @@ def test_get_next_task_filter_by_type():
 
 def test_add_subtasks():
     add_task("web_search", _web_search_data())
-    ids = add_subtasks("t-001", [{"type": "web_search", "data": _web_search_data()}])
-    assert ids == ["t-002"]
-    child = get_task("t-002")
-    assert child["parent_id"] == "t-001"
-    assert "t-002" in get_task("t-001")["successor_ids"]
+    ids = add_subtasks(1, [{"type": "web_search", "data": _web_search_data()}])
+    assert ids == [2]
+    child = get_task(2)
+    assert child["parent_id"] == 1
+    assert 2 in get_task(1)["successor_ids"]
 
 
 def test_add_subtasks_invalid_parent():
     with pytest.raises(KeyError):
-        add_subtasks("t-999", [{"type": "web_search", "data": _web_search_data()}])
+        add_subtasks(999, [{"type": "web_search", "data": _web_search_data()}])
 
 
 def test_add_subtasks_invalid_type():
     add_task("web_search", _web_search_data())
     with pytest.raises(ValueError, match="Unknown type"):
-        add_subtasks("t-001", [{"type": "bad_type", "data": {}}])
+        add_subtasks(1, [{"type": "bad_type", "data": {}}])
 
 
 # ---------------------------------------------------------------------------
@@ -287,10 +287,10 @@ def test_add_subtasks_invalid_type():
 
 def test_retry_task():
     add_task("web_search", _web_search_data(), max_attempts=3)
-    complete_task("t-001", {"error": "x"}, status="failed")
-    info = retry_task("t-001")
+    complete_task(1, {"error": "x"}, status="failed")
+    info = retry_task(1)
     assert info["attempt"] == 2
-    task = get_task("t-001")
+    task = get_task(1)
     assert task["status"] == "pending"
     assert task["result"] is None
 
@@ -298,16 +298,16 @@ def test_retry_task():
 def test_retry_task_not_failed():
     add_task("web_search", _web_search_data())
     with pytest.raises(ValueError, match="not failed"):
-        retry_task("t-001")
+        retry_task(1)
 
 
 def test_retry_task_exceeds_max_attempts():
     add_task("web_search", _web_search_data(), max_attempts=1)
-    complete_task("t-001", {}, status="failed")
+    complete_task(1, {}, status="failed")
     with pytest.raises(ValueError, match="max_attempts"):
-        retry_task("t-001")
+        retry_task(1)
 
 
 def test_retry_task_missing():
     with pytest.raises(KeyError):
-        retry_task("t-999")
+        retry_task(999)
