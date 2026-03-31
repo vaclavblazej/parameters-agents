@@ -44,6 +44,10 @@ class Task(TypedDict):
 
 
 class TaskStore(TypedDict):
+    version: int
+    next_id: int
+    created_at: str
+    updated_at: str
     tasks: list[Task]
 
 
@@ -52,24 +56,29 @@ def now_iso() -> str:
 
 
 def load_tasks() -> TaskStore:
+    ts = now_iso()
     if not TASKS_FILE.exists():
-        return {"tasks": []}
+        return {"version": 1, "next_id": 1, "created_at": ts, "updated_at": ts, "tasks": []}
     with open(TASKS_FILE) as f:
-        return json.load(f)
+        data = json.load(f)
+    # absence of "version" means old bare-list format — migrate all metadata at once
+    if "version" not in data:
+        tasks = data.get("tasks", [])
+        nums = [t["id"] for t in tasks if isinstance(t.get("id"), int)]
+        data["version"] = 1
+        data["next_id"] = max(nums) + 1 if nums else 1
+        data["created_at"] = ts
+        data["updated_at"] = ts
+        save_tasks(data)
+    return data
 
 
 def save_tasks(data: TaskStore) -> None:
+    data["updated_at"] = now_iso()
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     with open(TASKS_FILE, "w") as f:
         json.dump(data, f, indent=2)
         f.write("\n")
-
-
-def next_id(tasks: list[Task]) -> int:
-    if not tasks:
-        return 1
-    nums = [t["id"] for t in tasks if isinstance(t.get("id"), int)]
-    return max(nums) + 1 if nums else 1
 
 
 def is_unblocked(task: Task, completed_ids: set[str]) -> bool:
@@ -112,7 +121,8 @@ def add_task(
         raise ValueError(f"Unknown type '{task_type}'. Valid: {sorted(VALID_TYPES)}")
 
     data = load_tasks()
-    tid = next_id(data["tasks"])
+    tid = data["next_id"]
+    data["next_id"] += 1
     resolved_priority = priority if priority is not None else default_priority(task_type)
     resolved_max_attempts = max_attempts if max_attempts is not None else default_max_attempts(task_type)
     resolved_title = title if title else derive_title(task_type, task_data)
@@ -211,7 +221,8 @@ def add_subtasks(parent_id: int, subtasks: list[dict[str, Any]]) -> list[int]:
         task_type = st.get("type")
         if task_type not in VALID_TYPES:
             raise ValueError(f"Unknown type '{task_type}' in subtask")
-        tid = next_id(data["tasks"])
+        tid = data["next_id"]
+        data["next_id"] += 1
         priority = st.get("priority", default_priority(task_type))
         max_attempts = st.get("max_attempts", default_max_attempts(task_type))
         subtask_data = st.get("data", {})

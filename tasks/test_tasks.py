@@ -13,7 +13,6 @@ from .tasks import (
     get_next_task,
     get_task,
     list_tasks,
-    next_id,
     retry_task,
     set_task_result,
     update_task_status,
@@ -27,30 +26,6 @@ def isolated_tasks(tmp_path, monkeypatch):
 
     monkeypatch.setattr(mod, "DATA_DIR", tmp_path)
     monkeypatch.setattr(mod, "TASKS_FILE", tmp_path / "tasks.json")
-
-
-# ---------------------------------------------------------------------------
-# next_id
-# ---------------------------------------------------------------------------
-
-
-def test_next_id_empty():
-    assert next_id([]) == 1
-
-
-def test_next_id_sequential(tmp_path):
-    tasks = [{"id": 3}]
-    assert next_id(tasks) == 4
-
-
-def test_next_id_gap(tmp_path):
-    tasks = [{"id": 1}, {"id": 5}]
-    assert next_id(tasks) == 6
-
-
-def test_next_id_ignores_non_standard():
-    tasks = [{"id": 1}, {"id": "not-an-int"}]
-    assert next_id(tasks) == 2
 
 
 # ---------------------------------------------------------------------------
