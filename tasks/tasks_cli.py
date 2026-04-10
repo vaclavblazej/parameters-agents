@@ -7,19 +7,11 @@ import argparse
 import json
 import sys
 
-from .tasks import (
-    VALID_TYPES,
-    VALID_STATUSES,
-    add_subtasks,
-    add_task,
-    complete_task,
-    get_next_task,
-    get_task,
-    list_tasks,
-    retry_task,
-    set_task_result,
-    update_task_status,
-)
+from .tasks import VALID_TYPES, VALID_STATUSES, TaskManager
+
+
+def _mgr() -> TaskManager:
+    return TaskManager()
 
 
 def out(obj: object) -> None:
@@ -27,11 +19,11 @@ def out(obj: object) -> None:
 
 
 def cmd_list(args: argparse.Namespace) -> None:
-    out(list_tasks(status=args.status, task_type=args.type))
+    out(_mgr().list_tasks(status=args.status, task_type=args.type))
 
 
 def cmd_next(args: argparse.Namespace) -> None:
-    task = get_next_task(task_type=args.type)
+    task = _mgr().get_next_task(task_type=args.type)
     out(task if task is not None else {})
 
 
@@ -58,7 +50,7 @@ def cmd_add(args: argparse.Namespace) -> None:
             sys.exit(1)
 
     try:
-        tid = add_task(
+        tid = _mgr().add_task(
             task_type=args.type,
             task_data=task_data,
             priority=args.priority,
@@ -80,7 +72,7 @@ def cmd_update(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     try:
-        update_task_status(int(args.id), args.status)
+        _mgr().update_task_status(int(args.id), args.status)
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -96,7 +88,7 @@ def cmd_set_result(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     try:
-        set_task_result(int(args.id), result)
+        _mgr().set_task_result(int(args.id), result)
     except KeyError as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -116,7 +108,7 @@ def cmd_add_subtasks(args: argparse.Namespace) -> None:
         sys.exit(1)
 
     try:
-        ids = add_subtasks(int(args.parent_id), subtasks_raw)
+        ids = _mgr().add_subtasks(int(args.parent_id), subtasks_raw)
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -125,7 +117,7 @@ def cmd_add_subtasks(args: argparse.Namespace) -> None:
 
 
 def cmd_get(args: argparse.Namespace) -> None:
-    task = get_task(int(args.id))
+    task = _mgr().get_task(int(args.id))
     if task is None:
         print(f"Error: task '{args.id}' not found", file=sys.stderr)
         sys.exit(1)
@@ -141,7 +133,7 @@ def cmd_complete(args: argparse.Namespace) -> None:
 
     status = args.status if args.status else "completed"
     try:
-        complete_task(int(args.id), result, status)
+        _mgr().complete_task(int(args.id), result, status)
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -151,7 +143,7 @@ def cmd_complete(args: argparse.Namespace) -> None:
 
 def cmd_retry(args: argparse.Namespace) -> None:
     try:
-        info = retry_task(int(args.id))
+        info = _mgr().retry_task(int(args.id))
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)

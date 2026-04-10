@@ -100,15 +100,18 @@ class TaskStore:
             f.write("\n")
 
 
+class TaskManager:
+    def __init__(self):
+        self.store = TaskStore()
+
     def is_unblocked(self, task: Task, completed_ids: set[str]) -> bool:
         blocked_by = task.get("blocked_by", [])
         return not blocked_by or all(bid in completed_ids for bid in blocked_by)
 
-
     def get_next_task(self, task_type: str | None = None) -> Task | None:
-        completed_ids = {t["id"] for t in self.tasks if t.get("status") == "completed"}
+        completed_ids = {t["id"] for t in self.store.tasks if t.get("status") == "completed"}
         candidates = [
-            t for t in self.tasks
+            t for t in self.store.tasks
             if t.get("status") == "pending" and self.is_unblocked(t, completed_ids)
         ]
         if task_type:
@@ -117,13 +120,11 @@ class TaskStore:
             return None
         return max(candidates, key=lambda t: (t.get("priority", 5), t.get("id", 0)))
 
-
     def get_task(self, task_id: int) -> Task | None:
-        for task in self.tasks:
+        for task in self.store.tasks:
             if task["id"] == task_id:
                 return task
         return None
-
 
     def add_task(
         self,
@@ -138,8 +139,8 @@ class TaskStore:
         if task_type not in VALID_TYPES:
             raise ValueError(f"Unknown type '{task_type}'. Valid: {sorted(VALID_TYPES)}")
 
-        tid = self.next_id
-        self.next_id += 1
+        tid = self.store.next_id
+        self.store.next_id += 1
         resolved_priority = priority if priority is not None else default_priority(task_type)
         resolved_max_attempts = max_attempts if max_attempts is not None else default_max_attempts(task_type)
         resolved_title = title if title else derive_title(task_type, task_data)
@@ -163,24 +164,23 @@ class TaskStore:
             "data": cast(TaskData, task_data),
             "result": None,
         }
-        self.tasks.append(task)
+        self.store.tasks.append(task)
 
         if parent_id:
-            for t in self.tasks:
+            for t in self.store.tasks:
                 if t["id"] == parent_id:
                     t.setdefault("successor_ids", []).append(tid)
                     t["updated_at"] = ts
                     break
 
-        self.save_tasks()
+        self.store.save_tasks()
         return tid
-
 
     def update_task_status(self, task_id: int, status: str) -> None:
         if status not in VALID_STATUSES:
             raise ValueError(f"Unknown status '{status}'. Valid: {sorted(VALID_STATUSES)}")
 
-        for task in self.tasks:
+        for task in self.store.tasks:
             if task["id"] == task_id:
                 old_status = task.get("status")
                 task["status"] = cast(TaskStatus, status)
@@ -188,38 +188,35 @@ class TaskStore:
                 task["updated_at"] = ts
                 if status == "in_progress" and old_status != "in_progress":
                     task["started_at"] = ts
-                self.save_tasks()
+                self.store.save_tasks()
                 return
 
         raise KeyError(f"Task '{task_id}' not found")
 
-
     def set_task_result(self, task_id: int, result: dict[str, Any]) -> None:
-        for task in self.tasks:
+        for task in self.store.tasks:
             if task["id"] == task_id:
                 task["result"] = result
                 task["updated_at"] = time_now()
-                self.save_tasks()
+                self.store.save_tasks()
                 return
         raise KeyError(f"Task '{task_id}' not found")
-
 
     def complete_task(self, task_id: int, result: dict[str, Any], status: str = "completed") -> None:
         if status not in ("completed", "failed"):
             raise ValueError("status must be 'completed' or 'failed'")
-        for task in self.tasks:
+        for task in self.store.tasks:
             if task["id"] == task_id:
                 task["result"] = result
                 task["status"] = cast(TaskStatus, status)
                 task["updated_at"] = time_now()
-                self.save_tasks()
+                self.store.save_tasks()
                 return
         raise KeyError(f"Task '{task_id}' not found")
 
-
     def add_subtasks(self, parent_id: int, subtasks: list[dict[str, Any]]) -> list[int]:
         parent_task = None
-        for t in self.tasks:
+        for t in self.store.tasks:
             if t["id"] == parent_id:
                 parent_task = t
                 break
@@ -233,8 +230,8 @@ class TaskStore:
             task_type = st.get("type")
             if task_type not in VALID_TYPES:
                 raise ValueError(f"Unknown type '{task_type}' in subtask")
-            tid = self.next_id
-            self.next_id += 1
+            tid = self.store.next_id
+            self.store.next_id += 1
             priority = st.get("priority", default_priority(task_type))
             max_attempts = st.get("max_attempts", default_max_attempts(task_type))
             subtask_data = st.get("data", {})
@@ -257,17 +254,16 @@ class TaskStore:
                 "data": cast(TaskData, subtask_data),
                 "result": None,
             }
-            self.tasks.append(task)
+            self.store.tasks.append(task)
             ids.append(tid)
 
         parent_task.setdefault("successor_ids", []).extend(ids)
         parent_task["updated_at"] = ts
-        self.save_tasks()
+        self.store.save_tasks()
         return ids
 
-
     def retry_task(self, task_id: int) -> dict[str, Any]:
-        for task in self.tasks:
+        for task in self.store.tasks:
             if task["id"] == task_id:
                 if task.get("status") != "failed":
                     raise ValueError(f"Task '{task_id}' is not failed (status={task.get('status')})")
@@ -280,13 +276,12 @@ class TaskStore:
                 task["result"] = None
                 task["started_at"] = None
                 task["updated_at"] = time_now()
-                self.save_tasks()
+                self.store.save_tasks()
                 return {"attempt": task["attempt"], "max_attempts": max_attempts}
         raise KeyError(f"Task '{task_id}' not found")
 
-
     def list_tasks(self, status: str | None = None, task_type: str | None = None) -> list[Task]:
-        tasks = self.tasks
+        tasks = self.store.tasks
         if status:
             tasks = [t for t in tasks if t.get("status") == status]
         if task_type:

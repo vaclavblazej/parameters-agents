@@ -2,7 +2,7 @@
 
 import pytest
 
-from .tasks import TaskStore
+from .tasks import TaskManager
 
 
 @pytest.fixture(autouse=True)
@@ -16,7 +16,7 @@ def isolated_tasks(tmp_path, monkeypatch):
 
 @pytest.fixture
 def store():
-    return TaskStore()
+    return TaskManager()
 
 
 def _test_data():
