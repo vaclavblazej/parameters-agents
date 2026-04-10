@@ -26,7 +26,7 @@ VALID_TYPES: frozenset[str] = frozenset(REGISTRY.keys())
 VALID_STATUSES: frozenset[str] = frozenset(get_args(TaskStatus))
 
 
-def now_iso() -> str:
+def time_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -57,7 +57,7 @@ class TaskStore:
     tasks: list[Task]
 
     def __init__(self):
-        ts = now_iso()
+        ts = time_now()
         if not TASKS_FILE.exists():
             self.version = 1
             self.next_id = 1
@@ -86,7 +86,7 @@ class TaskStore:
             self.save_tasks()
 
     def save_tasks(self) -> None:
-        self.updated_at = now_iso()
+        self.updated_at = time_now()
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         data = {
             "version": self.version,
@@ -144,7 +144,7 @@ class TaskStore:
         resolved_max_attempts = max_attempts if max_attempts is not None else default_max_attempts(task_type)
         resolved_title = title if title else derive_title(task_type, task_data)
         resolved_blocked_by = blocked_by if blocked_by is not None else []
-        ts = now_iso()
+        ts = time_now()
 
         task: Task = {
             "id": tid,
@@ -184,7 +184,7 @@ class TaskStore:
             if task["id"] == task_id:
                 old_status = task.get("status")
                 task["status"] = cast(TaskStatus, status)
-                ts = now_iso()
+                ts = time_now()
                 task["updated_at"] = ts
                 if status == "in_progress" and old_status != "in_progress":
                     task["started_at"] = ts
@@ -198,7 +198,7 @@ class TaskStore:
         for task in self.tasks:
             if task["id"] == task_id:
                 task["result"] = result
-                task["updated_at"] = now_iso()
+                task["updated_at"] = time_now()
                 self.save_tasks()
                 return
         raise KeyError(f"Task '{task_id}' not found")
@@ -211,7 +211,7 @@ class TaskStore:
             if task["id"] == task_id:
                 task["result"] = result
                 task["status"] = cast(TaskStatus, status)
-                task["updated_at"] = now_iso()
+                task["updated_at"] = time_now()
                 self.save_tasks()
                 return
         raise KeyError(f"Task '{task_id}' not found")
@@ -227,7 +227,7 @@ class TaskStore:
             raise KeyError(f"Parent task '{parent_id}' not found")
 
         ids = []
-        ts = now_iso()
+        ts = time_now()
 
         for st in subtasks:
             task_type = st.get("type")
@@ -279,7 +279,7 @@ class TaskStore:
                 task["status"] = "pending"
                 task["result"] = None
                 task["started_at"] = None
-                task["updated_at"] = now_iso()
+                task["updated_at"] = time_now()
                 self.save_tasks()
                 return {"attempt": task["attempt"], "max_attempts": max_attempts}
         raise KeyError(f"Task '{task_id}' not found")
