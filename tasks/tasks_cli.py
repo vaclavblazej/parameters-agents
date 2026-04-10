@@ -34,10 +34,6 @@ def cmd_add(args: argparse.Namespace) -> None:
         print(f"Error: invalid JSON for --data: {e}", file=sys.stderr)
         sys.exit(1)
 
-    if args.type not in VALID_TYPES:
-        print(f"Error: unknown type '{args.type}'. Valid: {sorted(VALID_TYPES)}", file=sys.stderr)
-        sys.exit(1)
-
     blocked_by: list[int] = []
     if args.blocked_by:
         try:
