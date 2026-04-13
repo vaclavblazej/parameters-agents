@@ -19,7 +19,7 @@ from .task_types import (
 DATA_DIR = Path(__file__).parent / "data"
 TASKS_FILE = DATA_DIR / "tasks.json"
 
-TaskStatus = Literal["pending", "in_progress", "completed", "failed", "blocked"]
+TaskStatus = Literal["pending", "running", "completed", "failed", "blocked"]
 
 VALID_TYPES: frozenset[str] = frozenset(REGISTRY.keys())
 VALID_STATUSES: frozenset[str] = frozenset(get_args(TaskStatus))
@@ -29,6 +29,17 @@ def time_now() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
+class AttemptInfo(TypedDict):
+    current: int
+    max: int
+
+
+class TimeInfo(TypedDict):
+    created: str
+    started: str | None
+    updated: str
+
+
 class Task(TypedDict):
     id: int
     type: TaskType
@@ -36,13 +47,10 @@ class Task(TypedDict):
     status: TaskStatus
     priority: int
     parent_id: int | None
-    successor_ids: list[int]
+    children_ids: list[int]
     blocked_by: list[int]
-    attempt: int
-    max_attempts: int
-    created_at: str
-    started_at: str | None
-    updated_at: str
+    attempt: AttemptInfo
+    time: TimeInfo
     data: TaskData
     result: dict[str, Any] | None
 
@@ -50,15 +58,14 @@ class Task(TypedDict):
 class TaskStore(TypedDict):
     version: int
     next_id: int
-    created_at: str
-    updated_at: str
+    time: TimeInfo
     tasks: list[Task]
 
 
 def load_task_store() -> TaskStore:
     ts = time_now()
     if not TASKS_FILE.exists():
-        return TaskStore(version=1, next_id=1, created_at=ts, updated_at=ts, tasks=[])
+        return TaskStore(version=1, next_id=1, time={"created": ts, "started": None, "updated": ts}, tasks=[])
     with open(TASKS_FILE) as f:
         data = json.load(f)
     needs_save = False
@@ -68,14 +75,12 @@ def load_task_store() -> TaskStore:
         nums = [t["id"] for t in tasks if isinstance(t.get("id"), int)]
         data["version"] = 1
         data["next_id"] = max(nums) + 1 if nums else 1
-        data["created_at"] = ts
-        data["updated_at"] = ts
+        data["time"] = {"created": ts, "started": None, "updated": ts}
         needs_save = True
     store = TaskStore(
         version=data["version"],
         next_id=data["next_id"],
-        created_at=data["created_at"],
-        updated_at=data["updated_at"],
+        time=data["time"],
         tasks=data.get("tasks", []),
     )
     if needs_save:
@@ -84,7 +89,7 @@ def load_task_store() -> TaskStore:
 
 
 def save_task_store(store: TaskStore) -> None:
-    store["updated_at"] = time_now()
+    store["time"]["updated"] = time_now()
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     with open(TASKS_FILE, "w") as f:
         json.dump(store, f, indent=2)
@@ -145,11 +150,8 @@ class TaskManager:
             "parent_id": parent_id,
             "successor_ids": [],
             "blocked_by": blocked_by,
-            "attempt": 1,
-            "max_attempts": max_attempts,
-            "created_at": ts,
-            "started_at": None,
-            "updated_at": ts,
+            "attempt": {"current": 1, "max": max_attempts},
+            "time": {"created": ts, "started": None, "updated": ts},
             "data": cast(TaskData, task_data),
             "result": None,
         }
@@ -192,7 +194,7 @@ class TaskManager:
             for t in self.store["tasks"]:
                 if t["id"] == parent_id:
                     t.setdefault("successor_ids", []).append(tid)
-                    t["updated_at"] = ts
+                    t["time"]["updated"] = ts
                     break
 
         save_task_store(self.store)
@@ -206,15 +208,15 @@ class TaskManager:
         old_status = task.get("status")
         task["status"] = cast(TaskStatus, status)
         ts = time_now()
-        task["updated_at"] = ts
-        if status == "in_progress" and old_status != "in_progress":
-            task["started_at"] = ts
+        task["time"]["updated"] = ts
+        if status == "running" and old_status != "running":
+            task["time"]["started"] = ts
         save_task_store(self.store)
 
     def set_task_result(self, task_id: int, result: dict[str, Any]) -> None:
         task = self._find_task(task_id)
         task["result"] = result
-        task["updated_at"] = time_now()
+        task["time"]["updated"] = time_now()
         save_task_store(self.store)
 
     def complete_task(self, task_id: int, result: dict[str, Any], status: str = "completed") -> None:
@@ -223,7 +225,7 @@ class TaskManager:
         task = self._find_task(task_id)
         task["result"] = result
         task["status"] = cast(TaskStatus, status)
-        task["updated_at"] = time_now()
+        task["time"]["updated"] = time_now()
         save_task_store(self.store)
 
     def add_subtasks(self, parent_id: int, subtasks: list[dict[str, Any]]) -> list[int]:
@@ -258,7 +260,7 @@ class TaskManager:
             ids.append(tid)
 
         parent_task.setdefault("successor_ids", []).extend(ids)
-        parent_task["updated_at"] = ts
+        parent_task["time"]["updated"] = ts
         save_task_store(self.store)
         return ids
 
@@ -266,17 +268,19 @@ class TaskManager:
         task = self._find_task(task_id)
         if task.get("status") != "failed":
             raise ValueError(f"Task '{task_id}' is not failed (status={task.get('status')})")
-        attempt = task.get("attempt", 1)
-        max_attempts = task.get("max_attempts", 1)
-        if attempt >= max_attempts:
+        attempt_info = task.get("attempt", {"current": 1, "max": 1})
+        current = attempt_info["current"]
+        max_attempts = attempt_info["max"]
+        if current >= max_attempts:
             raise ValueError(f"Task '{task_id}' has reached max_attempts ({max_attempts})")
-        task["attempt"] = attempt + 1
+        attempt_info["current"] = current + 1
+        task["attempt"] = attempt_info
         task["status"] = "pending"
         task["result"] = None
-        task["started_at"] = None
-        task["updated_at"] = time_now()
+        task["time"]["started"] = None
+        task["time"]["updated"] = time_now()
         save_task_store(self.store)
-        return {"attempt": task["attempt"], "max_attempts": max_attempts}
+        return {"attempt": task["attempt"]}
 
     def list_tasks(self, status: str | None = None, task_type: str | None = None) -> list[Task]:
         tasks = self.store["tasks"]

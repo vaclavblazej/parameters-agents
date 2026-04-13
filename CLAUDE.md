@@ -56,7 +56,7 @@ Each stage spawns successors upon completion; the spawning task does not wait fo
 Full CRUD CLI. Task fields: `id`, `type`, `title`, `status`, `priority`, `parent_id`, `subtask_ids`, `blocked_by`, `attempt`, `max_attempts`, `created_at`, `started_at`, `updated_at`, `data`, `result`.
 
 - **Types**: `github_sync`, `web_search`, `research_paper`, `compile_entry`, `user_input`
-- **Statuses**: `pending`, `in_progress`, `completed`, `failed`, `blocked`
+- **Statuses**: `pending`, `running`, `completed`, `failed`, `blocked`
 - **Commands**: `list`, `next`, `add`, `update`, `set-result`, `add-subtasks`, `get`, `complete`, `retry`
 - `next` picks highest-priority unblocked pending task
 - `blocked_by` is for true dependencies (task cannot start until listed tasks complete)
