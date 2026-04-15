@@ -1,51 +1,48 @@
-from typing import Any, TypedDict
-from dataclasses import dataclass
+from tasks.task_types import TaskData
+from pydantic import BaseModel
 from typing import Union
 
-from tasks.tasks import Task
 
-@dataclass
-class Gathering:
+class Gathering(BaseModel):
     input: str
 
-@dataclass
-class Researching:
+class Researching(BaseModel):
     context: str
     subtask_ids: list[str]
 
-@dataclass
-class Writing:
+class Writing(BaseModel):
     context: str
     research: dict[str, str]   # subtask_id → result
 
 Phase = Union[Gathering, Researching, Writing]
 
-@dataclass
-class GithubSyncData:
+
+class GithubSyncData(TaskData):
     repo: str
     id: str
     phase: Phase
 
-def execute(task: GithubSyncData, subtask_results: dict) -> list[Task]:
-    match task.phase:
-        case Gathering(input=inp):
-            ctx = do_gather(inp)
-            subs = [Task(..., Researching(ctx, [])) for _ in ...]
-            task.phase = Researching(context=ctx, subtask_ids=[s.id for s in subs])
-            return subs
+    def priority(self) -> int:
+        return 5
 
-        case Researching(context=ctx, subtask_ids=ids):
-            task.phase = Writing(context=ctx, research=subtask_results)
-            return []
+    def max_attempts(self) -> int:
+        return 2
 
-        case Writing(context=ctx, research=res):
-            task.result = do_write(ctx, res)
-            return []
+    def derive_title(self) -> str:
+        return f"Sync: {self.repo}"
 
+    def execute(self, subtask_results: dict) -> list[Task]:
+        match self.phase:
+            case Gathering(input=inp):
+                ctx = do_gather(inp)
+                subs = [Task(..., Researching(ctx, [])) for _ in ...]
+                self.phase = Researching(context=ctx, subtask_ids=[s.id for s in subs])
+                return subs
 
-DEFAULT_PRIORITY = 5
-DEFAULT_MAX_ATTEMPTS = 2
+            case Researching(context=ctx, subtask_ids=ids):
+                self.phase = Writing(context=ctx, research=subtask_results)
+                return []
 
-
-def derive_title(data: dict[str, Any]) -> str:
-    return f"Sync: {data.get('repo', '')}"
+            case Writing(context=ctx, research=res):
+                self.result = do_write(ctx, res)
+                return []

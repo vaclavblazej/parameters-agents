@@ -1,17 +1,18 @@
-from typing import Any, TypedDict
+from tasks.task_types import TaskData
 
 
-class ResearchPaperData(TypedDict):
+class ResearchPaperData(TaskData):
     paper_id: str
     title: str
     doi: str
     url: str
     reason: str
 
+    def priority(self) -> int:
+        return 6
 
-DEFAULT_PRIORITY = 6
-DEFAULT_MAX_ATTEMPTS = 2
+    def max_attempts(self) -> int:
+        return 2
 
-
-def derive_title(data: dict[str, Any]) -> str:
-    return f"Research: {data.get('title', '')}"
+    def derive_title(self) -> str:
+        return f"Research: {self.title}"

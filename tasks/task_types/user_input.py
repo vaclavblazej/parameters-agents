@@ -1,15 +1,12 @@
-from typing import Any, NotRequired, TypedDict
+from tasks.task_types import TaskData
 
 
-class UserInputData(TypedDict):
+class UserInputData(TaskData):
     question: str
-    context: NotRequired[str]
+    context: str
 
+    def priority(self) -> int:
+        return 10
 
-DEFAULT_PRIORITY = 10
-DEFAULT_MAX_ATTEMPTS = 1
-
-
-def derive_title(data: dict[str, Any]) -> str:
-    question = data.get("question", "")
-    return f"Input: {question[:60]}"
+    def derive_title(self) -> str:
+        return f"Input: {self.question[:60]}"

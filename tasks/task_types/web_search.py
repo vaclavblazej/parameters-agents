@@ -1,7 +1,6 @@
-from typing import Any, TypedDict
+from tasks.task_types import TaskData
 
-
-class WebSearchData(TypedDict):
+class WebSearchData(TaskData):
     topic: str
     description: str
     github_issue_number: int
@@ -9,10 +8,8 @@ class WebSearchData(TypedDict):
     github_labels: list[str]
     max_papers: int
 
+    def max_attempts(self) -> int:
+        return 2
 
-DEFAULT_PRIORITY = 5
-DEFAULT_MAX_ATTEMPTS = 2
-
-
-def derive_title(data: dict[str, Any]) -> str:
-    return f"Search: {data.get('topic', '')}"
+    def derive_title(self) -> str:
+        return f"Search: {self.topic}"

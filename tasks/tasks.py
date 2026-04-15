@@ -9,12 +9,8 @@ from pathlib import Path
 from typing import Any, Literal, cast, get_args
 
 from .task_types import (
-    REGISTRY,
     TaskData,
     TaskType,
-    default_max_attempts,
-    default_priority,
-    derive_title,
 )
 
 DATA_DIR = Path(__file__).parent / "data"
@@ -29,7 +25,7 @@ VALID_TYPES: frozenset[str] = frozenset(REGISTRY.keys())
 VALID_STATUSES: frozenset[str] = frozenset(get_args(TaskStatus))
 
 
-def time_now() -> str:
+def time_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
@@ -99,9 +95,9 @@ class TaskManager:
         self.file = file
 
     def load(self) -> TaskStore:
-        ts = time_now()
+        time_now = time_iso()
         if not self.file.exists():
-            return TaskStore(version=1, next_id=1, time=TimeInfo(created=ts, started=None, updated=ts), tasks={})
+            return TaskStore(version=1, next_id=1, time=TimeInfo(created=time_now, started=None, updated=time_now), tasks={})
         try:
             with open(self.file) as f:
                 return TaskStore(**json.load(f))
@@ -111,7 +107,7 @@ class TaskManager:
             raise SystemExit(f"Schema mismatch in {self.file}: {e}") from e
 
     def save(self) -> None:
-        self.store.time.updated = time_now()
+        self.store.time.updated = time_iso()
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         tmp = self.file.with_suffix(".tmp")
         with open(tmp, "w") as f:
@@ -151,6 +147,11 @@ class TaskManager:
             return None
         return max(candidates, key=lambda t: (t.priority, -t.id))
 
+    def _get_new_task_id(self) -> int:
+        res = self.store.next_id
+        self.store.next_id += 1
+        return res
+
 ################################################################################
     def add_task(
         self,
@@ -162,19 +163,14 @@ class TaskManager:
         waiting_for: list[int] | None = None,
         max_attempts: int | None = None,
     ) -> int:
-        if task_type not in VALID_TYPES:
-            raise ValueError(f"Unknown type '{task_type}'. Valid: {sorted(VALID_TYPES)}")
-
-        tid = self.store.next_id
-        self.store.next_id += 1
         resolved_priority = priority if priority is not None else default_priority(task_type)
         resolved_max_attempts = max_attempts if max_attempts is not None else default_max_attempts(task_type)
         resolved_title = title if title else derive_title(task_type, task_data)
         resolved_blocked_by = waiting_for if waiting_for is not None else []
-        ts = time_now()
+        time_now = time_iso()
 
         task = Task(
-            tid=tid,
+            tid=self._get_new_task_id(),
             task_type=task_type,
             task_data=task_data,
             priority=resolved_priority,
@@ -182,19 +178,19 @@ class TaskManager:
             waiting_for=resolved_blocked_by,
             max_attempts=resolved_max_attempts,
             title=resolved_title,
-            time_now=ts,
+            time_now=time_now,
         )
         self.store.tasks[task.id] = task
 
         if parent_id:
             for t in self.store.tasks.values():
                 if t.id == parent_id:
-                    t.setdefault("successor_ids", []).append(tid)
-                    t.time.updated = ts
+                    t.children_ids.append(task.id)
+                    t.time.updated = time_now
                     break
 
         self.save()
-        return tid
+        return task.id
 
     def update_task_status(self, task_id: int, status: str) -> None:
         if status not in VALID_STATUSES:
@@ -203,16 +199,16 @@ class TaskManager:
         task = self._get_task(task_id)
         old_status = task.status
         task.status = cast(TaskStatus, status)
-        ts = time_now()
-        task.time.updated = ts
+        time_now = time_iso()
+        task.time.updated = time_now
         if status == "running" and old_status != "running":
-            task.time.started = ts
+            task.time.started = time_now
         self.save()
 
     def set_task_result(self, task_id: int, result: dict[str, Any]) -> None:
         task = self._get_task(task_id)
         task.result = result
-        task.time.updated = time_now()
+        task.time.updated = time_iso()
         self.save()
 
     def complete_task(self, task_id: int, result: dict[str, Any], status: str = "completed") -> None:
@@ -221,14 +217,14 @@ class TaskManager:
         task = self._get_task(task_id)
         task.result = result
         task.status = cast(TaskStatus, status)
-        task.time.updated = time_now()
+        task.time.updated = time_iso()
         self.save()
 
     def add_subtasks(self, parent_id: int, subtasks: list[dict[str, Any]]) -> list[int]:
         parent_task = self._get_task(parent_id)
 
         ids = []
-        time_now = time_now()
+        time_now = time_iso()
 
         for st in subtasks:
             task_type = st.type
@@ -252,10 +248,10 @@ class TaskManager:
                 title=title,
                 time_now=time_now,
             )
-            self.store.tasks.append(task)
+            self.store.tasks[tid] = task
             ids.append(tid)
 
-        parent_task.setdefault("successor_ids", []).extend(ids)
+        parent_task.children_ids.extend(ids)
         parent_task.time.updated = time_now
         self.save()
         return ids
@@ -274,7 +270,7 @@ class TaskManager:
         task.status = "pending"
         task.result = None
         task.time.started = None
-        task.time.updated = time_now()
+        task.time.updated = time_iso()
         self.save()
         return {"attempt": task.attempt}
 
