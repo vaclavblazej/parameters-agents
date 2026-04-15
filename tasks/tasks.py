@@ -21,7 +21,6 @@ TaskStatus = Literal["pending", "running", "completed", "failed", "blocked"]
 def done(status: TaskStatus) -> bool:
     return status in ["completed", "failed"]
 
-VALID_TYPES: frozenset[str] = frozenset(REGISTRY.keys())
 VALID_STATUSES: frozenset[str] = frozenset(get_args(TaskStatus))
 
 
@@ -47,8 +46,8 @@ class Task(BaseModel):
     status: TaskStatus
     priority: int
     parent_id: int | None
-    children_ids: list[int]
-    waiting_for: list[int]
+    children_ids: set[int]
+    waiting_for: set[int]
     attempt: AttemptInfo
     time: TimeInfo
     data: TaskData
@@ -73,7 +72,7 @@ class Task(BaseModel):
             status="pending",
             priority=priority,
             parent_id=parent_id,
-            children_ids=[],
+            children_ids={},
             waiting_for=waiting_for,
             attempt=AttemptInfo(current=1, max=max_attempts),
             time=TimeInfo(created=time_now, updated=time_now),
@@ -137,10 +136,7 @@ class TaskManager:
             return None
 
     def get_next_task(self, task_type: TaskType | None = None) -> Task | None:
-        candidates = [
-            t for t in self.store.tasks.values()
-            if t.status == "pending"
-        ]
+        candidates = self.list_tasks(status="pending")
         if task_type:
             candidates = [t for t in candidates if t.type == task_type]
         if not candidates:
@@ -152,7 +148,6 @@ class TaskManager:
         self.store.next_id += 1
         return res
 
-################################################################################
     def add_task(
         self,
         task_type: TaskType,
@@ -163,9 +158,9 @@ class TaskManager:
         waiting_for: list[int] | None = None,
         max_attempts: int | None = None,
     ) -> int:
-        resolved_priority = priority if priority is not None else default_priority(task_type)
-        resolved_max_attempts = max_attempts if max_attempts is not None else default_max_attempts(task_type)
-        resolved_title = title if title else derive_title(task_type, task_data)
+        resolved_priority = priority if priority is not None else task_data.priority()
+        resolved_max_attempts = max_attempts if max_attempts is not None else task_data.max_attempts()
+        resolved_title = title if title else task_data.derive_title()
         resolved_blocked_by = waiting_for if waiting_for is not None else []
         time_now = time_iso()
 
@@ -183,36 +178,25 @@ class TaskManager:
         self.store.tasks[task.id] = task
 
         if parent_id:
-            for t in self.store.tasks.values():
-                if t.id == parent_id:
-                    t.children_ids.append(task.id)
-                    t.time.updated = time_now
-                    break
+            t = self._get_task(parent_id)
+            t.children_ids.add(task.id)
+            t.time.updated = time_now
 
         self.save()
         return task.id
 
-    def update_task_status(self, task_id: int, status: str) -> None:
-        if status not in VALID_STATUSES:
-            raise ValueError(f"Unknown status '{status}'. Valid: {sorted(VALID_STATUSES)}")
-
+    def update_task_status(self, task_id: int, status: TaskStatus) -> None:
         task = self._get_task(task_id)
         old_status = task.status
         task.status = cast(TaskStatus, status)
         time_now = time_iso()
-        task.time.updated = time_now
         if status == "running" and old_status != "running":
             task.time.started = time_now
+        task.time.updated = time_now
         self.save()
 
-    def set_task_result(self, task_id: int, result: dict[str, Any]) -> None:
-        task = self._get_task(task_id)
-        task.result = result
-        task.time.updated = time_iso()
-        self.save()
-
-    def complete_task(self, task_id: int, result: dict[str, Any], status: str = "completed") -> None:
-        if status not in ("completed", "failed"):
+    def complete_task(self, task_id: int, result: dict[str, Any], status: TaskStatus = "completed") -> None:
+        if not done(status):
             raise ValueError("status must be 'completed' or 'failed'")
         task = self._get_task(task_id)
         task.result = result
@@ -220,43 +204,7 @@ class TaskManager:
         task.time.updated = time_iso()
         self.save()
 
-    def add_subtasks(self, parent_id: int, subtasks: list[dict[str, Any]]) -> list[int]:
-        parent_task = self._get_task(parent_id)
-
-        ids = []
-        time_now = time_iso()
-
-        for st in subtasks:
-            task_type = st.type
-            if task_type not in VALID_TYPES:
-                raise ValueError(f"Unknown type '{task_type}' in subtask")
-            tid = self.store.next_id
-            self.store.next_id += 1
-            priority = st.get("priority", default_priority(task_type))
-            max_attempts = st.get("max_attempts", default_max_attempts(task_type))
-            subtask_data = st.data
-            title = st.title or derive_title(task_type, subtask_data)
-            waiting_for = st.waiting_for
-            task = Task(
-                tid=tid,
-                task_type=task_type,
-                task_data=subtask_data,
-                priority=priority,
-                parent_id=parent_id,
-                waiting_for=waiting_for,
-                max_attempts=max_attempts,
-                title=title,
-                time_now=time_now,
-            )
-            self.store.tasks[tid] = task
-            ids.append(tid)
-
-        parent_task.children_ids.extend(ids)
-        parent_task.time.updated = time_now
-        self.save()
-        return ids
-
-    def retry_task(self, task_id: int) -> dict[str, Any]:
+    def reset_task(self, task_id: int) -> dict[str, Any]:
         task = self._get_task(task_id)
         if task.status != "failed":
             raise ValueError(f"Task '{task_id}' is not failed (status={task.status})")
@@ -274,8 +222,8 @@ class TaskManager:
         self.save()
         return {"attempt": task.attempt}
 
-    def list_tasks(self, status: str | None = None, task_type: str | None = None) -> list[Task]:
-        tasks = self.store.tasks
+    def list_tasks(self, status: TaskStatus | None = None, task_type: TaskType | None = None) -> list[Task]:
+        tasks = list(self.store.tasks.values())
         if status:
             tasks = [t for t in tasks if t.status == status]
         if task_type:
