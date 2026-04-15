@@ -2,6 +2,8 @@ from typing import Any, TypedDict
 from dataclasses import dataclass
 from typing import Union
 
+from tasks.tasks import Task
+
 @dataclass
 class Gathering:
     input: str
@@ -18,12 +20,13 @@ class Writing:
 
 Phase = Union[Gathering, Researching, Writing]
 
-class GithubSyncData(TypedDict):
+@dataclass
+class GithubSyncData:
     repo: str
     id: str
     phase: Phase
 
-def execute(task: Task, subtask_results: dict) -> list["Task"]:
+def execute(task: GithubSyncData, subtask_results: dict) -> list[Task]:
     match task.phase:
         case Gathering(input=inp):
             ctx = do_gather(inp)
