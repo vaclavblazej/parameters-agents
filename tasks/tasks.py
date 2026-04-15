@@ -22,6 +22,9 @@ TASKS_FILE = DATA_DIR / "tasks.json"
 
 TaskStatus = Literal["pending", "running", "completed", "failed", "blocked"]
 
+def done(status: TaskStatus) -> bool:
+    return status in ["completed", "failed"]
+
 VALID_TYPES: frozenset[str] = frozenset(REGISTRY.keys())
 VALID_STATUSES: frozenset[str] = frozenset(get_args(TaskStatus))
 
@@ -37,7 +40,7 @@ class AttemptInfo(BaseModel):
 
 class TimeInfo(BaseModel):
     created: str
-    started: str | None
+    started: str | None = None
     updated: str
 
 
@@ -54,6 +57,33 @@ class Task(BaseModel):
     time: TimeInfo
     data: TaskData
     result: dict[str, Any] | None
+
+    def __init__(
+        self,
+        tid: int,
+        task_type: TaskType,
+        task_data: TaskData,
+        priority: int,
+        parent_id: int | None,
+        blocked_by: list[int],
+        max_attempts: int,
+        title: str,
+        time_now: str,
+    ) -> None:
+        super().__init__(
+            id=tid,
+            type=task_type,
+            title=title,
+            status="pending",
+            priority=priority,
+            parent_id=parent_id,
+            children_ids=[],
+            blocked_by=blocked_by,
+            attempt=AttemptInfo(current=1, max=max_attempts),
+            time=TimeInfo(created=time_now, updated=time_now),
+            data=task_data,
+            result=None,
+        )
 
 
 class TaskStore(BaseModel):
@@ -89,17 +119,31 @@ class TaskManager:
             f.write("\n")
         tmp.rename(self.file)  # atomic on POSIX
 
-################################################################################
-    @staticmethod
-    def is_unblocked(task: Task, completed_ids: set[str]) -> bool:
+    def is_unblocked(self, task: Task) -> bool:
         blocked_by = task.blocked_by
-        return not blocked_by or all(bid in completed_ids for bid in blocked_by)
+        if not blocked_by:
+            return True
+        for bid in blocked_by:
+            btask = self.get_task(bid)
+            if btask and not done(btask.status):
+                return False
+        return True
 
-    def get_next_task(self, task_type: str | None = None) -> Task | None:
-        completed_ids = {t.id for t in self.store.tasks if t.status == "completed"}
+    def _get_task(self, task_id: int) -> Task:
+        for task_id in self.store.tasks:
+            return self.store.tasks[task_id]
+        raise KeyError(f"Task '{task_id}' not found")
+
+    def get_task(self, task_id: int) -> Task | None:
+        try:
+            return self._get_task(task_id)
+        except KeyError:
+            return None
+
+    def get_next_task(self, task_type: TaskType | None = None) -> Task | None:
         candidates = [
-            t for t in self.store.tasks
-            if t.status == "pending" and self.is_unblocked(t, completed_ids)
+            t for t in self.store.tasks.values()
+            if t.status == "pending"
         ]
         if task_type:
             candidates = [t for t in candidates if t.type == task_type]
@@ -107,45 +151,7 @@ class TaskManager:
             return None
         return max(candidates, key=lambda t: (t.priority, -t.id))
 
-    def _find_task(self, task_id: int) -> Task:
-        for task in self.store.tasks:
-            if task.id == task_id:
-                return task
-        raise KeyError(f"Task '{task_id}' not found")
-
-    def get_task(self, task_id: int) -> Task | None:
-        try:
-            return self._find_task(task_id)
-        except KeyError:
-            return None
-
-    def _make_task(
-        self,
-        tid: int,
-        task_type: str,
-        task_data: dict[str, Any],
-        priority: int,
-        parent_id: int | None,
-        blocked_by: list[int],
-        max_attempts: int,
-        title: str,
-        ts: str,
-    ) -> Task:
-        return {
-            "id": tid,
-            "type": cast(TaskType, task_type),
-            "title": title,
-            "status": "pending",
-            "priority": priority,
-            "parent_id": parent_id,
-            "successor_ids": [],
-            "blocked_by": blocked_by,
-            "attempt": {"current": 1, "max": max_attempts},
-            "time": {"created": ts, "started": None, "updated": ts},
-            "data": cast(TaskData, task_data),
-            "result": None,
-        }
-
+################################################################################
     def add_task(
         self,
         task_type: str,
@@ -167,7 +173,7 @@ class TaskManager:
         resolved_blocked_by = blocked_by if blocked_by is not None else []
         ts = time_now()
 
-        task = self._make_task(
+        task = Task(
             tid=tid,
             task_type=task_type,
             task_data=task_data,
@@ -176,7 +182,7 @@ class TaskManager:
             blocked_by=resolved_blocked_by,
             max_attempts=resolved_max_attempts,
             title=resolved_title,
-            ts=ts,
+            time_now=ts,
         )
         self.store.tasks.append(task)
 
@@ -187,42 +193,42 @@ class TaskManager:
                     t.time.updated = ts
                     break
 
-        self.store.save()
+        self.save()
         return tid
 
     def update_task_status(self, task_id: int, status: str) -> None:
         if status not in VALID_STATUSES:
             raise ValueError(f"Unknown status '{status}'. Valid: {sorted(VALID_STATUSES)}")
 
-        task = self._find_task(task_id)
+        task = self._get_task(task_id)
         old_status = task.status
         task.status = cast(TaskStatus, status)
         ts = time_now()
         task.time.updated = ts
         if status == "running" and old_status != "running":
             task.time.started = ts
-        self.store.save()
+        self.save()
 
     def set_task_result(self, task_id: int, result: dict[str, Any]) -> None:
-        task = self._find_task(task_id)
+        task = self._get_task(task_id)
         task.result = result
         task.time.updated = time_now()
-        self.store.save()
+        self.save()
 
     def complete_task(self, task_id: int, result: dict[str, Any], status: str = "completed") -> None:
         if status not in ("completed", "failed"):
             raise ValueError("status must be 'completed' or 'failed'")
-        task = self._find_task(task_id)
+        task = self._get_task(task_id)
         task.result = result
         task.status = cast(TaskStatus, status)
         task.time.updated = time_now()
-        self.store.save()
+        self.save()
 
     def add_subtasks(self, parent_id: int, subtasks: list[dict[str, Any]]) -> list[int]:
-        parent_task = self._find_task(parent_id)
+        parent_task = self._get_task(parent_id)
 
         ids = []
-        ts = time_now()
+        time_now = time_now()
 
         for st in subtasks:
             task_type = st.type
@@ -233,9 +239,9 @@ class TaskManager:
             priority = st.get("priority", default_priority(task_type))
             max_attempts = st.get("max_attempts", default_max_attempts(task_type))
             subtask_data = st.data
-            title = st.get("title") or derive_title(task_type, subtask_data)
+            title = st.title or derive_title(task_type, subtask_data)
             blocked_by = st.blocked_by
-            task = self._make_task(
+            task = Task(
                 tid=tid,
                 task_type=task_type,
                 task_data=subtask_data,
@@ -244,18 +250,18 @@ class TaskManager:
                 blocked_by=blocked_by,
                 max_attempts=max_attempts,
                 title=title,
-                ts=ts,
+                time_now=time_now,
             )
             self.store.tasks.append(task)
             ids.append(tid)
 
         parent_task.setdefault("successor_ids", []).extend(ids)
-        parent_task.time.updated = ts
-        self.store.save()
+        parent_task.time.updated = time_now
+        self.save()
         return ids
 
     def retry_task(self, task_id: int) -> dict[str, Any]:
-        task = self._find_task(task_id)
+        task = self._get_task(task_id)
         if task.status != "failed":
             raise ValueError(f"Task '{task_id}' is not failed (status={task.status})")
         attempt_info = task.attempt
@@ -269,7 +275,7 @@ class TaskManager:
         task.result = None
         task.time.started = None
         task.time.updated = time_now()
-        self.store.save()
+        self.save()
         return {"attempt": task.attempt}
 
     def list_tasks(self, status: str | None = None, task_type: str | None = None) -> list[Task]:
