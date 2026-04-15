@@ -52,7 +52,7 @@ class Task(BaseModel):
     priority: int
     parent_id: int | None
     children_ids: list[int]
-    blocked_by: list[int]
+    waiting_for: list[int]
     attempt: AttemptInfo
     time: TimeInfo
     data: TaskData
@@ -65,7 +65,7 @@ class Task(BaseModel):
         task_data: TaskData,
         priority: int,
         parent_id: int | None,
-        blocked_by: list[int],
+        waiting_for: list[int],
         max_attempts: int,
         title: str,
         time_now: str,
@@ -78,7 +78,7 @@ class Task(BaseModel):
             priority=priority,
             parent_id=parent_id,
             children_ids=[],
-            blocked_by=blocked_by,
+            waiting_for=waiting_for,
             attempt=AttemptInfo(current=1, max=max_attempts),
             time=TimeInfo(created=time_now, updated=time_now),
             data=task_data,
@@ -120,10 +120,10 @@ class TaskManager:
         tmp.rename(self.file)  # atomic on POSIX
 
     def is_unblocked(self, task: Task) -> bool:
-        blocked_by = task.blocked_by
-        if not blocked_by:
+        waiting_for = task.waiting_for
+        if not waiting_for:
             return True
-        for bid in blocked_by:
+        for bid in waiting_for:
             btask = self.get_task(bid)
             if btask and not done(btask.status):
                 return False
@@ -154,12 +154,12 @@ class TaskManager:
 ################################################################################
     def add_task(
         self,
-        task_type: str,
-        task_data: dict[str, Any],
+        task_type: TaskType,
+        task_data: TaskData,
         priority: int | None = None,
         parent_id: int | None = None,
         title: str | None = None,
-        blocked_by: list[int] | None = None,
+        waiting_for: list[int] | None = None,
         max_attempts: int | None = None,
     ) -> int:
         if task_type not in VALID_TYPES:
@@ -170,7 +170,7 @@ class TaskManager:
         resolved_priority = priority if priority is not None else default_priority(task_type)
         resolved_max_attempts = max_attempts if max_attempts is not None else default_max_attempts(task_type)
         resolved_title = title if title else derive_title(task_type, task_data)
-        resolved_blocked_by = blocked_by if blocked_by is not None else []
+        resolved_blocked_by = waiting_for if waiting_for is not None else []
         ts = time_now()
 
         task = Task(
@@ -179,15 +179,15 @@ class TaskManager:
             task_data=task_data,
             priority=resolved_priority,
             parent_id=parent_id,
-            blocked_by=resolved_blocked_by,
+            waiting_for=resolved_blocked_by,
             max_attempts=resolved_max_attempts,
             title=resolved_title,
             time_now=ts,
         )
-        self.store.tasks.append(task)
+        self.store.tasks[task.id] = task
 
         if parent_id:
-            for t in self.store.tasks:
+            for t in self.store.tasks.values():
                 if t.id == parent_id:
                     t.setdefault("successor_ids", []).append(tid)
                     t.time.updated = ts
@@ -240,14 +240,14 @@ class TaskManager:
             max_attempts = st.get("max_attempts", default_max_attempts(task_type))
             subtask_data = st.data
             title = st.title or derive_title(task_type, subtask_data)
-            blocked_by = st.blocked_by
+            waiting_for = st.waiting_for
             task = Task(
                 tid=tid,
                 task_type=task_type,
                 task_data=subtask_data,
                 priority=priority,
                 parent_id=parent_id,
-                blocked_by=blocked_by,
+                waiting_for=waiting_for,
                 max_attempts=max_attempts,
                 title=title,
                 time_now=time_now,
