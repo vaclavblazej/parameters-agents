@@ -60,35 +60,36 @@ class TaskStore(BaseModel):
     version: int
     next_id: int
     time: TimeInfo
-    tasks: list[Task]
-
-    @classmethod
-    def load(cls) -> TaskStore:
-        ts = time_now()
-        if not TASKS_FILE.exists():
-            return TaskStore(version=1, next_id=1, time=TimeInfo(created=ts, started=None, updated=ts), tasks=[])
-        try:
-            with open(TASKS_FILE) as f:
-                return TaskStore(**json.load(f))
-        except json.JSONDecodeError as e:
-            raise SystemExit(f"Corrupt tasks file {TASKS_FILE}: {e}") from e
-        except TypeError as e:
-            raise SystemExit(f"Schema mismatch in {TASKS_FILE}: {e}") from e
-
-    def save(self) -> None:
-        self.time.updated = time_now()
-        DATA_DIR.mkdir(parents=True, exist_ok=True)
-        tmp = TASKS_FILE.with_suffix(".tmp")
-        with open(tmp, "w") as f:
-            json.dump(self, f, indent=2)
-            f.write("\n")
-        tmp.rename(TASKS_FILE)  # atomic on POSIX
+    tasks: dict[int, Task]
 
 
 class TaskManager:
-    def __init__(self):
-        self.store = TaskStore.load()
+    def __init__(self, file=TASKS_FILE):
+        self.store = self.load()
+        self.file = file
 
+    def load(self) -> TaskStore:
+        ts = time_now()
+        if not self.file.exists():
+            return TaskStore(version=1, next_id=1, time=TimeInfo(created=ts, started=None, updated=ts), tasks={})
+        try:
+            with open(self.file) as f:
+                return TaskStore(**json.load(f))
+        except json.JSONDecodeError as e:
+            raise SystemExit(f"Corrupt tasks file {self.file}: {e}") from e
+        except TypeError as e:
+            raise SystemExit(f"Schema mismatch in {self.file}: {e}") from e
+
+    def save(self) -> None:
+        self.store.time.updated = time_now()
+        DATA_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = self.file.with_suffix(".tmp")
+        with open(tmp, "w") as f:
+            json.dump(self.store, f, indent=2)
+            f.write("\n")
+        tmp.rename(self.file)  # atomic on POSIX
+
+################################################################################
     @staticmethod
     def is_unblocked(task: Task, completed_ids: set[str]) -> bool:
         blocked_by = task.blocked_by
