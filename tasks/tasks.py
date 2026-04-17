@@ -72,7 +72,7 @@ class Task(BaseModel):
             status="pending",
             priority=priority,
             parent_id=parent_id,
-            children_ids={},
+            children_ids=set(),
             waiting_for=waiting_for,
             attempt=AttemptInfo(current=1, max=max_attempts),
             time=TimeInfo(created=time_now, updated=time_now),
@@ -82,21 +82,21 @@ class Task(BaseModel):
 
 
 class TaskStore(BaseModel):
-    version: int
-    next_id: int
+    version: int = 1
+    next_id: int = 1
     time: TimeInfo
-    tasks: dict[int, Task]
+    tasks: dict[int, Task] = {}
 
 
 class TaskManager:
     def __init__(self, file=TASKS_FILE):
-        self.store = self.load()
         self.file = file
+        self.store = self.load()
 
     def load(self) -> TaskStore:
         time_now = time_iso()
         if not self.file.exists():
-            return TaskStore(version=1, next_id=1, time=TimeInfo(created=time_now, started=None, updated=time_now), tasks={})
+            return TaskStore(time=TimeInfo(created=time_now, updated=time_now))
         try:
             with open(self.file) as f:
                 return TaskStore(**json.load(f))
@@ -110,7 +110,7 @@ class TaskManager:
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         tmp = self.file.with_suffix(".tmp")
         with open(tmp, "w") as f:
-            json.dump(self.store, f, indent=2)
+            json.dump(self.store.model_dump(), f, indent=4)
             f.write("\n")
         tmp.rename(self.file)  # atomic on POSIX
 
@@ -125,7 +125,7 @@ class TaskManager:
         return True
 
     def _get_task(self, task_id: int) -> Task:
-        for task_id in self.store.tasks:
+        if task_id in self.store.tasks.keys():
             return self.store.tasks[task_id]
         raise KeyError(f"Task '{task_id}' not found")
 
@@ -161,7 +161,7 @@ class TaskManager:
         resolved_priority = priority if priority is not None else task_data.priority()
         resolved_max_attempts = max_attempts if max_attempts is not None else task_data.max_attempts()
         resolved_title = title if title else task_data.derive_title()
-        resolved_blocked_by = waiting_for if waiting_for is not None else []
+        resolved_waiting_for = waiting_for if waiting_for is not None else []
         time_now = time_iso()
 
         task = Task(
@@ -170,7 +170,7 @@ class TaskManager:
             task_data=task_data,
             priority=resolved_priority,
             parent_id=parent_id,
-            waiting_for=resolved_blocked_by,
+            waiting_for=resolved_waiting_for,
             max_attempts=resolved_max_attempts,
             title=resolved_title,
             time_now=time_now,
