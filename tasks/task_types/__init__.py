@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 # from . import compile_entry, github_sync, research_paper, user_input, web_search
 
-TaskType = Literal["github_sync", "web_search", "research_paper", "compile_entry", "user_input"]
+TaskType = Literal["github_sync", "web_search", "research_paper", "compile_entry", "user_input", "test_hello_world"]
 
 # # Map type name → module
 # REGISTRY: dict[str, ModuleType] = {

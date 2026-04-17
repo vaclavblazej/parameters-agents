@@ -22,6 +22,7 @@ def done(status: TaskStatus) -> bool:
     return status in ["completed", "failed"]
 
 VALID_STATUSES: frozenset[str] = frozenset(get_args(TaskStatus))
+VALID_TYPES: frozenset[str] = frozenset(get_args(TaskType))
 
 
 def time_iso() -> str:

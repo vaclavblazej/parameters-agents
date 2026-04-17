@@ -19,12 +19,13 @@ def out(obj: object) -> None:
 
 
 def cmd_list(args: argparse.Namespace) -> None:
-    out(_mgr().list_tasks(status=args.status, task_type=args.type))
+    tasks = _mgr().list_tasks(status=args.status, task_type=args.type)
+    out([t.model_dump() for t in tasks])
 
 
 def cmd_next(args: argparse.Namespace) -> None:
     task = _mgr().get_next_task(task_type=args.type)
-    out(task if task is not None else {})
+    out(task.model_dump() if task is not None else {})
 
 
 def cmd_add(args: argparse.Namespace) -> None:
@@ -52,7 +53,7 @@ def cmd_add(args: argparse.Namespace) -> None:
             priority=args.priority,
             parent_id=int(args.parent_id) if args.parent_id else None,
             title=args.title,
-            blocked_by=blocked_by,
+            waiting_for=blocked_by,
             max_attempts=args.max_attempts,
         )
     except ValueError as e:
@@ -76,22 +77,6 @@ def cmd_update(args: argparse.Namespace) -> None:
     out({"ok": True})
 
 
-def cmd_set_result(args: argparse.Namespace) -> None:
-    try:
-        result = json.loads(args.result)
-    except json.JSONDecodeError as e:
-        print(f"Error: invalid JSON for --result: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    try:
-        _mgr().set_task_result(int(args.id), result)
-    except KeyError as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
-
-    out({"ok": True})
-
-
 def cmd_add_subtasks(args: argparse.Namespace) -> None:
     try:
         subtasks_raw = json.loads(args.tasks)
@@ -103,11 +88,24 @@ def cmd_add_subtasks(args: argparse.Namespace) -> None:
         print("Error: --tasks must be a JSON array", file=sys.stderr)
         sys.exit(1)
 
-    try:
-        ids = _mgr().add_subtasks(int(args.parent_id), subtasks_raw)
-    except (KeyError, ValueError) as e:
-        print(f"Error: {e}", file=sys.stderr)
-        sys.exit(1)
+    parent_id = int(args.parent_id)
+    mgr = _mgr()
+    ids = []
+    for subtask in subtasks_raw:
+        try:
+            tid = mgr.add_task(
+                task_type=subtask["type"],
+                task_data=subtask.get("data", {}),
+                priority=subtask.get("priority"),
+                parent_id=parent_id,
+                title=subtask.get("title"),
+                waiting_for=subtask.get("waiting_for", []),
+                max_attempts=subtask.get("max_attempts"),
+            )
+            ids.append(tid)
+        except (KeyError, ValueError) as e:
+            print(f"Error: {e}", file=sys.stderr)
+            sys.exit(1)
 
     out({"ids": ids})
 
@@ -117,7 +115,7 @@ def cmd_get(args: argparse.Namespace) -> None:
     if task is None:
         print(f"Error: task '{args.id}' not found", file=sys.stderr)
         sys.exit(1)
-    out(task)
+    out(task.model_dump())
 
 
 def cmd_complete(args: argparse.Namespace) -> None:
@@ -139,7 +137,7 @@ def cmd_complete(args: argparse.Namespace) -> None:
 
 def cmd_retry(args: argparse.Namespace) -> None:
     try:
-        info = _mgr().retry_task(int(args.id))
+        info = _mgr().reset_task(int(args.id))
     except (KeyError, ValueError) as e:
         print(f"Error: {e}", file=sys.stderr)
         sys.exit(1)
@@ -175,11 +173,6 @@ def main():
     p_update.add_argument("id", help="Task ID")
     p_update.add_argument("--status", required=True, help="New status")
 
-    # set-result
-    p_result = sub.add_parser("set-result", help="Set task result")
-    p_result.add_argument("id", help="Task ID")
-    p_result.add_argument("--result", required=True, help="Result as JSON")
-
     # add-subtasks
     p_sub = sub.add_parser("add-subtasks", help="Add multiple subtasks for a parent")
     p_sub.add_argument("parent_id", help="Parent task ID")
@@ -206,7 +199,6 @@ def main():
         "next": cmd_next,
         "add": cmd_add,
         "update": cmd_update,
-        "set-result": cmd_set_result,
         "add-subtasks": cmd_add_subtasks,
         "get": cmd_get,
         "complete": cmd_complete,
